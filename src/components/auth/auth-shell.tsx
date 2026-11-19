@@ -24,7 +24,7 @@ const STATS = [
 export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-screen overflow-x-hidden bg-[#f6f4ee] lg:grid-cols-2 dark:bg-[#050c08]">
-      <aside className="relative hidden min-h-screen flex-col overflow-hidden border-r border-black/[0.06] bg-[#eef3ed] px-14 py-10 lg:sticky lg:top-0 lg:flex lg:h-screen dark:border-white/[0.06] dark:bg-[#07130e]">
+      <aside className="relative hidden min-h-screen flex-col overflow-hidden border-r border-black/[0.06] bg-[#eef3ed] px-14 py-10 lg:flex dark:border-white/[0.06] dark:bg-[#07130e]">
         <div className="pointer-events-none absolute -left-40 -top-40 size-[720px] rounded-full bg-[radial-gradient(circle,rgba(67,211,171,0.2),transparent_64%)]" />
         <div className="pointer-events-none absolute -bottom-72 -right-40 size-[700px] rounded-full bg-[radial-gradient(circle,rgba(67,211,171,0.1),transparent_66%)]" />
 
