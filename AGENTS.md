@@ -10,29 +10,44 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Fix Mate frontend
 
-Early-stage Next.js 16 App Router UI scaffold (React 19.3, TypeScript, Tailwind CSS v4, shadcn `base-nova`). The only route is `src/app/page.tsx`; there is no backend, auth, database, test suite, or CI in this repo.
+Single-page marketing site for a home-repair marketplace (Next.js 16 App Router, React 19.3, TypeScript, Tailwind CSS v4, shadcn `base-nova`). The only route is `/` (`src/app/page.tsx`); there is no backend, auth, database, test suite, or CI. Content is hardcoded.
+
+- `src/app/page.tsx` composes the homepage sections in this order: hero, category strip, latest services, how it works, trust band, popular categories, why FixMate, testimonials, CTA, then the footer outside `<main>`. `layout.tsx` adds the navbar, Google fonts (Plus Jakarta headings, Inter body), and a pre-paint theme script.
+- Only `site-navbar.tsx` and `home-motion.tsx` are client components; everything else renders on the server. Keep new sections server-side unless they need state/effects.
+- The visual reference is the standalone demo at `C:\web_dev\assignment_09-demo` (vanilla-JS hash-router SPA: `src/public.js`, `src/styles.css`, `src/data.js`). Use it to compare copy, spacing, and colors when changing the homepage.
+- Auth/footer links (`/sign-in`, `/sign-up`, `/privacy`, `/terms`, `/support`) and the hero search form are scaffold placeholders pointing at routes that don't exist. Don't treat the 404s as regressions unless asked to build those pages.
 
 ## Commands
 
-- `npm run dev` — Turbopack dev server. If one is already running, reuse it; `.next/dev/lock` contains its PID/port/URL and starting a second server just reports the existing one.
-- `npm run build` — production build. Turbopack is the default bundler and the build also runs TypeScript checking.
+- `npm run dev` — Turbopack dev server. Starting a second instance fails and prints the existing server's PID, port, and log path; reuse it or stop it with `taskkill /PID <pid> /F`. Don't assume port 3000.
+- `npm run build` — production build; Turbopack is the default bundler and the build also runs TypeScript checking.
 - `npm run lint` — ESLint flat config (`eslint.config.mjs`); no arguments needed.
-- `npx tsc --noEmit` — quick standalone typecheck (there is no `typecheck` script).
+- `npx tsc --noEmit` — standalone typecheck (there is no `typecheck` script). `tsconfig.tsbuildinfo` is a local artifact.
 - After adding/moving routes, run `npx next typegen` to refresh generated route types.
 - Use npm (`package-lock.json` is the only lockfile). No tests are configured — don't invent a test command or add a runner unless asked.
+
+## Homepage data and animation hooks
+
+- `src/lib/home-data.ts` is the homepage source of truth: featured services, category counts, steps, stats, why-FixMate reasons, and testimonials. Change copy or card content there, not inside the section components.
+- `src/lib/service-styles.ts` supplies the category icon/tone maps used by the category strip, service cards, and category cards. `src/lib/services.ts` still holds the full `SERVICES` list but **no homepage component imports it**; editing it will not change the homepage.
+- `src/components/home-motion.tsx` is the only animation code: GSAP + ScrollTrigger with a `prefers-reduced-motion` guard. It targets `data-hero`, `data-hero-art`, `data-reveal`, `data-reveal-group`, and `data-float`. Add those attributes to new elements instead of writing per-section animation code.
+- `popular-strip.tsx` is an unused earlier draft; the live strip is `category-strip.tsx`.
+- Keep homepage containers at `max-w-[1264px] px-6` (1216px of content, like the demo), section links pointing at `#services` / `#how-it-works`, and the navbar 74px tall (`scroll-mt-[74px]`).
 
 ## Conventions that differ from framework defaults
 
 - Import the class-name helper as `import { cn } from "cn"`. It comes from the `cn` package; do not add `clsx`/`tailwind-merge`, and don't assume `@/lib/utils` is the source (`src/lib/utils.ts` only re-exports `cn`).
 - UI primitives are Base UI (`@base-ui/react/...`), not Radix. Match the existing patterns in `src/components/ui/` and keep new shadcn components there; aliases are defined in `components.json`.
-- Tailwind v4 is CSS-first: there is no `tailwind.config.*`. Theme tokens and dark mode live in `src/app/globals.css` (`@theme inline`, oklch variables). CSS is compiled by the `@tailwindcss/turbopack` loader rule in `next.config.ts`, not by PostCSS — do not add a PostCSS config for it.
+- Tailwind v4 is CSS-first: there is no `tailwind.config.*`. Theme tokens and dark mode live in `src/app/globals.css` (`@theme inline`, oklch variables, `@custom-variant dark (&:is(.dark *))`). CSS is compiled by the `@tailwindcss/turbopack` loader rule in `next.config.ts`, not by PostCSS — do not add a PostCSS config for it.
+- Landing sections use hardcoded hex/arbitrary-value colors with explicit `dark:` classes, not the shadcn tokens. Changing `globals.css` variables restyles `src/components/ui/` primitives but not the page sections.
+- The theme toggle (`SiteNavbar`) adds/removes `.dark` on `<html>` and persists to `localStorage` under `fixmate-theme`; `layout.tsx` replays that before paint to avoid a flash. Keep the key and the `suppressHydrationWarning` on `<html>` in sync.
 - Use the `@/*` alias for `src/*`.
 - `PageProps<"/route">`, `LayoutProps<"/">`, and `RouteContext` are global types generated into `.next/types`; use them without importing. Never hand-edit `next-env.d.ts` (generated, gitignored).
 
 ## Generated files and agent hooks
 
 - Keep the `nextjs-agent-rules` block above; `next dev` rewrites it. `experimental.agentFeedback` is enabled in `next.config.ts`, so `next dev` may also append a `nextjs-agent-feedback` block to this file. Commit these managed changes rather than reverting them.
-- `next dev`/`next build` write `.next/`; it is gitignored. `README.md` is currently empty, so this file is the main project guidance.
+- `next dev`/`next build` write `.next/`; it is gitignored. `README.md` is empty, so this file is the main project guidance.
 - No environment variables are used yet; `.env*` is gitignored.
 
 <!-- BEGIN:nextjs-agent-feedback -->

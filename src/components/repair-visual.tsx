@@ -11,7 +11,10 @@ export function RepairVisual() {
 
       <div className="relative pt-16">
         {/* Floating verification card */}
-        <div className="absolute left-0 top-0 z-20 flex w-[188px] items-center gap-2.5 rounded-2xl border border-black/[0.06] bg-white/95 p-3 shadow-[0_12px_30px_rgba(16,48,34,0.12)] backdrop-blur sm:w-[202px] dark:border-white/10 dark:bg-[#0a1711]/95">
+        <div
+          data-float
+          className="absolute left-0 top-0 z-20 flex w-[188px] items-center gap-2.5 rounded-2xl border border-black/[0.06] bg-white/95 p-3 shadow-[0_12px_30px_rgba(16,48,34,0.12)] backdrop-blur sm:w-[202px] dark:border-white/10 dark:bg-[#0a1711]/95"
+        >
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#e3f7ec] dark:bg-[#102b20]">
             <ShieldCheck className="size-4 text-[#0c7b52] dark:text-[#63e6b6]" />
           </span>
@@ -27,7 +30,7 @@ export function RepairVisual() {
         </div>
 
         {/* Main repair card */}
-        <div className="relative z-10 mx-auto w-[82%] rounded-[28px] border border-[#17382a] bg-[#06110c] px-5 pb-4 pt-5 shadow-[0_30px_80px_rgba(2,15,9,0.45)] sm:w-[76%] sm:px-6 sm:pb-5 sm:pt-6">
+        <div className="relative z-10 mx-auto w-[82%] rotate-[-1.4deg] rounded-[26px] border border-[#17382a] bg-[#06110c] px-5 pb-4 pt-5 shadow-[0_30px_80px_rgba(2,15,9,0.45)] sm:w-[74%] sm:px-6 sm:pb-5 sm:pt-6">
           <div className="flex items-start justify-between gap-2">
             <div>
               <h3 className="text-[17px] font-bold leading-tight text-white sm:text-[19px]">
@@ -45,7 +48,7 @@ export function RepairVisual() {
           </div>
 
           {/* Simple phone illustration built with CSS */}
-          <div className="relative mx-auto my-5 h-[190px] w-[112px] sm:h-[205px] sm:w-[124px]">
+          <div className="relative mx-auto my-5 h-[190px] w-[128px] sm:h-[205px] sm:w-[140px]">
             <div className="absolute inset-0 rounded-[27px] border border-[#2d8f68] bg-[#07160f] shadow-[0_0_30px_rgba(38,180,124,0.14)]">
               <div className="mx-auto mt-4 h-1 w-8 rounded-full bg-[#163c2c]" />
 
@@ -64,9 +67,6 @@ export function RepairVisual() {
                 <span className="h-1 w-5 rounded-full bg-[#276c50]" />
               </div>
             </div>
-
-            <div className="absolute -left-8 top-1/2 h-px w-8 bg-gradient-to-r from-transparent to-[#2e9d70]/60" />
-            <div className="absolute -right-8 top-1/2 h-px w-8 bg-gradient-to-l from-transparent to-[#2e9d70]/60" />
 
             <div className="absolute -bottom-2 -right-3 flex size-8 items-center justify-center rounded-full bg-[#f0b46e] shadow-md sm:size-9">
               <Wrench className="size-4 text-[#5b3516]" />
@@ -88,7 +88,7 @@ export function RepairVisual() {
         </div>
 
         {/* Orange "pay after service" seal */}
-        <div className="absolute right-0 top-0 z-20 flex size-[72px] -rotate-[8deg] flex-col items-center justify-center rounded-full border-2 border-dashed border-[#7d4c22]/40 bg-[#f0b46e] text-center text-[#5b3516] shadow-[0_10px_25px_rgba(93,56,20,0.18)] sm:size-[80px]">
+        <div className="absolute right-[6px] top-[36px] z-20 flex size-[72px] rotate-[9deg] flex-col items-center justify-center rounded-full border-2 border-dashed border-[#7d4c22]/40 bg-[#f0b46e] text-center text-[#5b3516] shadow-[0_10px_25px_rgba(93,56,20,0.18)] sm:size-[74px]">
           <ShieldCheck className="mb-1 size-3.5" />
           <span className="text-[8px] font-extrabold leading-[1.15] tracking-[0.12em]">
             PAY AFTER
@@ -100,7 +100,10 @@ export function RepairVisual() {
 
       {/* Floating info cards below the main card */}
       <div className="mt-5 flex items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-2.5 rounded-2xl border border-black/[0.06] bg-white/95 px-3 py-2.5 shadow-[0_12px_30px_rgba(16,48,34,0.10)] dark:border-white/10 dark:bg-[#0a1711]/95">
+        <div
+          data-float
+          className="flex items-center gap-2.5 rounded-2xl border border-black/[0.06] bg-white/95 px-3 py-2.5 shadow-[0_12px_30px_rgba(16,48,34,0.10)] dark:border-white/10 dark:bg-[#0a1711]/95"
+        >
           <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#e6f6ec] dark:bg-[#102b20]">
             <Clock className="size-3.5 text-[#0c7b52] dark:text-[#63e6b6]" />
           </span>
@@ -114,7 +117,10 @@ export function RepairVisual() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 rounded-2xl border border-black/[0.06] bg-white/95 px-3 py-2.5 shadow-[0_12px_30px_rgba(16,48,34,0.10)] dark:border-white/10 dark:bg-[#0a1711]/95">
+        <div
+          data-float
+          className="flex items-center gap-2.5 rounded-2xl border border-black/[0.06] bg-white/95 px-3 py-2.5 shadow-[0_12px_30px_rgba(16,48,34,0.10)] dark:border-white/10 dark:bg-[#0a1711]/95"
+        >
           <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#e6f6ec] dark:bg-[#102b20]">
             <CreditCard className="size-3.5 text-[#0c7b52] dark:text-[#63e6b6]" />
           </span>

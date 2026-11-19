@@ -12,18 +12,18 @@ import { Brand } from "@/components/brand";
 
 const QUICK_LINKS = [
   { label: "Home", href: "/" },
-  { label: "Browse services", href: "/#services" },
+  { label: "Browse services", href: "/services" },
   { label: "How it works", href: "/#how-it-works" },
   { label: "Become a technician", href: "/sign-up" },
   { label: "Sign in", href: "/sign-in" },
 ];
 
 const CATEGORY_LINKS = [
-  { label: "Smartphone repair", href: "/#services" },
-  { label: "AC servicing", href: "/#services" },
-  { label: "Refrigerator repair", href: "/#services" },
-  { label: "Laptop & PC", href: "/#services" },
-  { label: "Electrical work", href: "/#services" },
+  { label: "Smartphone repair", href: "/services?category=Smartphone" },
+  { label: "AC servicing", href: "/services?category=AC" },
+  { label: "Refrigerator repair", href: "/services?category=Refrigerator" },
+  { label: "Laptop & PC", href: "/services?category=Laptop+%26+PC" },
+  { label: "Electrical work", href: "/services?category=Electrical" },
 ];
 
 const CONTACT_ROWS: Array<{ icon: LucideIcon; text: string; href?: string }> = [
@@ -63,10 +63,10 @@ const SOCIAL_LINKS = [
 ];
 
 const HEADING_CLASSES =
-  "text-[12px] font-bold uppercase tracking-[0.1em] text-[#121914] dark:text-[#f1f5f2]";
+  "text-[12px] font-bold uppercase tracking-[0.1em] text-[#f1f5f2]";
 
 const LINK_CLASSES =
-  "text-[14px] leading-5 text-[#5c6861] transition-colors hover:text-[#0c7b52] dark:text-[#aebbb4] dark:hover:text-[#63e6b6]";
+  "text-[14px] leading-5 text-[#a9b8b0] transition-colors hover:text-white";
 
 function FooterColumn({
   title,
@@ -94,16 +94,16 @@ function FooterColumn({
 
 export function SiteFooter() {
   return (
-    <footer className="relative overflow-hidden border-t border-black/[0.06] bg-[#ebe9e1] dark:border-white/[0.05] dark:bg-[#050c08]">
+    <footer className="relative overflow-hidden bg-[#0b1713] dark:border-t dark:border-white/[0.05]">
       {/* Soft green light in the corner, matching the reference footer. */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_-10%,rgba(76,180,133,0.14),transparent_48%)] dark:bg-[radial-gradient(circle_at_88%_-10%,rgba(52,190,134,0.13),transparent_45%)]" />
 
-      <div className="relative mx-auto max-w-[1280px] px-5 pb-8 pt-16 sm:px-8">
+      <div className="relative mx-auto max-w-[1264px] px-6 pb-4 pt-14">
         <div className="grid grid-cols-2 gap-x-6 gap-y-10 xl:grid-cols-[1.45fr_0.94fr_0.84fr_1.22fr] xl:gap-10">
           <div className="col-span-2 xl:col-span-1">
-            <Brand />
+            <Brand onDark />
 
-            <p className="mt-6 max-w-[290px] text-[14px] leading-[1.7] text-[#5c6861] dark:text-[#9fada6]">
+            <p className="mt-6 max-w-[290px] text-[14px] leading-[1.7] text-[#a9b8b0]">
               Verified technicians for phones, laptops, ACs, fridges and
               everything electrical. Every job tracked. Pay only when the repair
               is done.
@@ -115,7 +115,7 @@ export function SiteFooter() {
                   key={social.label}
                   href={social.href}
                   aria-label={social.label}
-                  className="flex size-9 items-center justify-center rounded-[9px] border border-black/10 bg-white/60 text-[#4d5a53] transition-colors hover:border-[#0c7b52]/40 hover:text-[#0c7b52] dark:border-white/10 dark:bg-white/[0.02] dark:text-[#96a39c] dark:hover:border-[#63e6b6]/40 dark:hover:text-[#63e6b6]"
+                  className="flex size-9 items-center justify-center rounded-[9px] border border-white/10 bg-white/[0.03] text-[#96a39c] transition-colors hover:border-[#43d3ab]/40 hover:text-[#43d3ab]"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -140,7 +140,7 @@ export function SiteFooter() {
               {CONTACT_ROWS.map(({ icon: Icon, text, href }) => (
                 <li key={text} className="flex items-start gap-3">
                   <Icon
-                    className="mt-0.5 size-4 shrink-0 text-[#7a857f] dark:text-[#6e7c75]"
+                    className="mt-0.5 size-4 shrink-0 text-[#6e7c75]"
                     strokeWidth={1.7}
                     aria-hidden="true"
                   />
@@ -148,12 +148,12 @@ export function SiteFooter() {
                   {href ? (
                     <a
                       href={href}
-                      className="text-[14px] leading-[1.55] text-[#4b5851] transition-colors hover:text-[#0c7b52] dark:text-[#b7c3bc] dark:hover:text-[#63e6b6]"
+                      className="text-[14px] leading-[1.55] text-[#b7c3bc] transition-colors hover:text-[#43d3ab]"
                     >
                       {text}
                     </a>
                   ) : (
-                    <p className="text-[14px] leading-[1.55] text-[#4b5851] dark:text-[#b7c3bc]">
+                    <p className="text-[14px] leading-[1.55] text-[#b7c3bc]">
                       {text}
                     </p>
                   )}
@@ -162,18 +162,18 @@ export function SiteFooter() {
             </ul>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-black/10 bg-white/60 px-2.5 py-1.5 text-[10.5px] font-medium text-[#3d4842] dark:border-white/[0.09] dark:bg-white/[0.03] dark:text-[#c4cfc8]">
+              <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-white/[0.09] bg-white/[0.03] px-2.5 py-1.5 text-[10.5px] font-medium text-[#c4cfc8]">
                 <ShieldCheck
-                  className="size-3 text-[#0c7b52] dark:text-[#63e6b6]"
+                  className="size-3 text-[#43d3ab]"
                   strokeWidth={2}
                   aria-hidden="true"
                 />
                 Verified pros
               </span>
 
-              <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-black/10 bg-white/60 px-2.5 py-1.5 text-[10.5px] font-medium text-[#3d4842] dark:border-white/[0.09] dark:bg-white/[0.03] dark:text-[#c4cfc8]">
+              <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-white/[0.09] bg-white/[0.03] px-2.5 py-1.5 text-[10.5px] font-medium text-[#c4cfc8]">
                 <Lock
-                  className="size-3 text-[#0c7b52] dark:text-[#63e6b6]"
+                  className="size-3 text-[#43d3ab]"
                   strokeWidth={2}
                   aria-hidden="true"
                 />
@@ -183,25 +183,25 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-black/[0.08] pt-4 text-[11.5px] text-[#6c7570] sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.07] dark:text-[#78857e]">
+        <div className="mt-12 flex flex-col gap-3 border-t border-white/[0.09] pt-4 text-[11.5px] text-[#78857e] sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 FixMate Technologies Ltd. All rights reserved.</p>
 
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <Link
               href="/privacy"
-              className="text-[#6c7570] transition-colors hover:text-[#0c7b52] dark:text-[#78857e] dark:hover:text-[#63e6b6]"
+              className="text-[#78857e] transition-colors hover:text-white"
             >
               Privacy
             </Link>
             <Link
               href="/terms"
-              className="text-[#6c7570] transition-colors hover:text-[#0c7b52] dark:text-[#78857e] dark:hover:text-[#63e6b6]"
+              className="text-[#78857e] transition-colors hover:text-white"
             >
               Terms
             </Link>
             <Link
               href="/support"
-              className="text-[#6c7570] transition-colors hover:text-[#0c7b52] dark:text-[#78857e] dark:hover:text-[#63e6b6]"
+              className="text-[#78857e] transition-colors hover:text-white"
             >
               Support
             </Link>

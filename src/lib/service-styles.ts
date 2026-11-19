@@ -1,11 +1,11 @@
 import {
   Laptop,
+  Plug,
   Refrigerator,
   Smartphone,
   Snowflake,
   Tv,
   WashingMachine,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 import type { ServiceCategory } from "@/lib/services";
@@ -65,7 +65,7 @@ export const CATEGORY_ICONS: Record<ServiceCategory, LucideIcon> = {
   Refrigerator,
   TV: Tv,
   "Washing Machine": WashingMachine,
-  Electrical: Zap,
+  Electrical: Plug,
 };
 
 export const CATEGORY_TONES: Record<ServiceCategory, ServiceTone> = {
