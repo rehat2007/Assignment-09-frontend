@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { ServiceCategory } from "@/lib/services";
 import { CATEGORY_SUMMARY } from "@/lib/home-data";
@@ -47,7 +48,7 @@ export function PopularCategories() {
             const Icon = CATEGORY_ICONS[name];
 
             return (
-              <a
+              <Link
                 key={name}
                 href={`/services?category=${encodeURIComponent(name)}`}
                 className="group relative flex min-h-[156px] flex-col overflow-hidden rounded-[15px] border border-[#e5e1d6] bg-white p-[18px] transition duration-200 hover:-translate-y-[3px] hover:border-[#d2ccbc] hover:shadow-[0_14px_30px_-18px_rgba(15,26,21,0.28)] dark:border-white/[0.08] dark:bg-[#101a16]"
@@ -66,11 +67,11 @@ export function PopularCategories() {
                 <p className="mt-1 text-[11.5px] text-[#5f6f68] dark:text-[#9dab9f]">
                   {count} {count === 1 ? "service" : "services"} available
                 </p>
-              </a>
+              </Link>
             );
           })}
 
-          <a
+          <Link
             href="/services"
             className="group flex min-h-[156px] flex-col items-center justify-center gap-3 rounded-[15px] bg-[#0e6b54] p-[18px] text-center transition hover:-translate-y-[3px] hover:shadow-[0_16px_36px_-18px_rgba(14,107,84,0.7)] dark:bg-[#43d3ab]"
           >
@@ -84,7 +85,7 @@ export function PopularCategories() {
             <span className="text-[11px] font-medium text-white/70 dark:text-[#06231b]/70">
               Search, filter and sort
             </span>
-          </a>
+          </Link>
         </div>
       </div>
     </section>

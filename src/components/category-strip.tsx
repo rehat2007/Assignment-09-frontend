@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CATEGORY_SUMMARY } from "@/lib/home-data";
 import { CATEGORY_ICONS } from "@/lib/service-styles";
@@ -18,25 +19,25 @@ export function CategoryStrip() {
             const Icon = CATEGORY_ICONS[name];
 
             return (
-              <a
+              <Link
                 key={name}
                 href={`/services?category=${encodeURIComponent(name)}`}
                 className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12.5px] text-[#5f6f68] transition-colors hover:bg-white hover:text-[#0f1a15] hover:shadow-sm dark:text-[#9dab9f] dark:hover:bg-white/[0.05] dark:hover:text-white"
               >
                 <Icon className="size-[15px] text-[#0e6b54] dark:text-[#43d3ab]" />
                 {name}
-              </a>
+              </Link>
             );
           })}
         </nav>
 
-        <a
+        <Link
           href="/services"
           className="flex items-center gap-2 text-[13px] font-semibold text-[#0e6b54] transition-colors hover:text-[#0a5342] dark:text-[#43d3ab]"
         >
           All services
           <ArrowRight className="size-4" />
-        </a>
+        </Link>
       </div>
     </div>
   );

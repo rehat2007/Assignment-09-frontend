@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { HomeMotion } from "@/components/home-motion";
 import { ServiceCard } from "@/components/service-card";
+import { SiteFooter } from "@/components/site-footer";
 import {
   CATEGORIES,
   PAGE_SIZE,
@@ -431,6 +432,8 @@ export default async function ServicesPage({ searchParams }: Props) {
           </div>
         </div>
       </main>
+
+      <SiteFooter />
     </>
   );
 }

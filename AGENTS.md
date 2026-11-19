@@ -10,12 +10,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Fix Mate frontend
 
-Single-page marketing site for a home-repair marketplace (Next.js 16 App Router, React 19.3, TypeScript, Tailwind CSS v4, shadcn `base-nova`). The only route is `/` (`src/app/page.tsx`); there is no backend, auth, database, test suite, or CI. Content is hardcoded.
+Marketing and catalogue UI for a home-repair marketplace (Next.js 16 App Router, React 19.3, TypeScript, Tailwind CSS v4, shadcn `base-nova`). Routes are `/`, `/services`, and `/services/[id]`; there is no backend, auth, database, test suite, or CI. Content is hardcoded.
 
 - `src/app/page.tsx` composes the homepage sections in this order: hero, category strip, latest services, how it works, trust band, popular categories, why FixMate, testimonials, CTA, then the footer outside `<main>`. `layout.tsx` adds the navbar, Google fonts (Plus Jakarta headings, Inter body), and a pre-paint theme script.
+- `/services` is a server component whose filters live entirely in the URL (`q`, `category`, `mode`, `sort`, `page`); category/mode chips and pagination are links, and the search/sort controls are a plain GET form. Keep it that way rather than adding client filter state.
+- `/services/[id]` is a basic detail page (unknown ids 404). `View details` links come from the shared card, so new listing links should use `/services/<id>`.
 - Only `site-navbar.tsx` and `home-motion.tsx` are client components; everything else renders on the server. Keep new sections server-side unless they need state/effects.
-- The visual reference is the standalone demo at `C:\web_dev\assignment_09-demo` (vanilla-JS hash-router SPA: `src/public.js`, `src/styles.css`, `src/data.js`). Use it to compare copy, spacing, and colors when changing the homepage.
-- Auth/footer links (`/sign-in`, `/sign-up`, `/privacy`, `/terms`, `/support`) and the hero search form are scaffold placeholders pointing at routes that don't exist. Don't treat the 404s as regressions unless asked to build those pages.
+- The visual reference is the standalone demo at `C:\web_dev\assignment_09-demo` (vanilla-JS hash-router SPA: `src/public.js`, `src/styles.css`, `src/data.js`). Use it to compare copy, spacing, and colors.
+- Auth/footer links (`/sign-in`, `/sign-up`, `/privacy`, `/terms`, `/support`) are still scaffold placeholders pointing at routes that don't exist. Don't treat those 404s as regressions unless asked to build the pages.
 
 ## Commands
 
@@ -26,13 +28,15 @@ Single-page marketing site for a home-repair marketplace (Next.js 16 App Router,
 - After adding/moving routes, run `npx next typegen` to refresh generated route types.
 - Use npm (`package-lock.json` is the only lockfile). No tests are configured — don't invent a test command or add a runner unless asked.
 
-## Homepage data and animation hooks
+## Data, cards, and animation hooks
 
-- `src/lib/home-data.ts` is the homepage source of truth: featured services, category counts, steps, stats, why-FixMate reasons, and testimonials. Change copy or card content there, not inside the section components.
-- `src/lib/service-styles.ts` supplies the category icon/tone maps used by the category strip, service cards, and category cards. `src/lib/services.ts` still holds the full `SERVICES` list but **no homepage component imports it**; editing it will not change the homepage.
+- `src/lib/services.ts` is the single source for the 15 live listings (`Service` type, `SERVICES`, `CATEGORIES`, `PAGE_SIZE`). Edit a listing there, not inside a page or card.
+- `src/lib/home-data.ts` derives `FEATURED_SERVICES` (six newest) and `CATEGORY_SUMMARY` (counts) from `SERVICES`; it also holds home-only copy (steps, stats, why-FixMate, testimonials).
+- `src/components/service-card.tsx` is shared by the homepage and `/services`. Change the card once there; it links each listing to `/services/<id>`.
+- `src/lib/service-styles.ts` supplies the category icon/tone maps used by the strip, cards, and category tiles.
 - `src/components/home-motion.tsx` is the only animation code: GSAP + ScrollTrigger with a `prefers-reduced-motion` guard. It targets `data-hero`, `data-hero-art`, `data-reveal`, `data-reveal-group`, and `data-float`. Add those attributes to new elements instead of writing per-section animation code.
 - `popular-strip.tsx` is an unused earlier draft; the live strip is `category-strip.tsx`.
-- Keep homepage containers at `max-w-[1264px] px-6` (1216px of content, like the demo), section links pointing at `#services` / `#how-it-works`, and the navbar 74px tall (`scroll-mt-[74px]`).
+- Keep containers at `max-w-[1264px] px-6` (1216px of content, like the demo), navbar links pointing at `/services` / `#how-it-works`, and the navbar 74px tall (`scroll-mt-[74px]`).
 
 ## Conventions that differ from framework defaults
 

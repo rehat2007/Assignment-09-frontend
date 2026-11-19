@@ -14,6 +14,10 @@ const NAV_LINKS = [
   { label: "How it works", href: "/#how-it-works" },
 ];
 
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function SiteNavbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -37,7 +41,7 @@ export function SiteNavbar() {
         {/* Desktop navigation */}
         <nav className="ml-1.5 hidden h-[74px] items-center gap-1 md:flex">
           {NAV_LINKS.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive = isActivePath(pathname, link.href);
 
             return (
               <Link
@@ -118,7 +122,7 @@ export function SiteNavbar() {
         >
           <nav className="flex flex-col">
             {NAV_LINKS.map((link) => {
-              const isActive = pathname === link.href;
+              const isActive = isActivePath(pathname, link.href);
 
               return (
                 <Link
