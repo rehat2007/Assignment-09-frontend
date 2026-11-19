@@ -14,7 +14,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
-import { PopularStrip } from "@/components/popular-strip";
 
 const TONES = {
   amber: {
@@ -153,8 +152,6 @@ const SERVICES: Service[] = [
 export function LatestServices() {
   return (
     <section id="services" className="scroll-mt-[68px]">
-      <PopularStrip />
-
       <div className="mx-auto max-w-[1280px] px-5 pb-24 pt-20 sm:px-8 lg:pt-24">
         <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#3fae80] dark:text-[#5be0a5]">
           <span className="h-px w-7 bg-current" />
