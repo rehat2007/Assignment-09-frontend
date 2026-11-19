@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { cn } from "cn";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { authClient } from "@/lib/auth-client";
+import { getAppRole } from "@/lib/roles";
 
 // Keeping the links in one place makes the desktop and mobile menus easy to update.
 const NAV_LINKS = [
@@ -19,9 +21,35 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export function SiteNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
+
+  const user = session?.user;
+  const role = user ? getAppRole(user) : null;
+
+  async function handleSignOut() {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          setMobileMenuOpen(false);
+          router.push("/");
+          router.refresh();
+        },
+      },
+    });
+  }
 
   // Auth pages render their own full-screen shell and header.
   if (pathname === "/sign-in" || pathname === "/sign-up") return null;
@@ -66,19 +94,69 @@ export function SiteNavbar() {
             aria-hidden="true"
           />
 
-          <Link
-            href="/sign-in"
-            className="hidden h-10 items-center rounded-[11px] px-[18px] text-[14px] font-semibold text-[#27352f] transition-colors hover:bg-black/[0.04] sm:inline-flex dark:text-[#cfdbd3] dark:hover:bg-white/[0.06] dark:hover:text-white"
-          >
-            Sign in
-          </Link>
+          {isPending ? (
+            <span
+              aria-hidden="true"
+              className="hidden size-8 animate-pulse rounded-full bg-black/10 sm:block dark:bg-white/10"
+            />
+          ) : user ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="hidden items-center gap-2 rounded-[11px] px-1.5 py-1 transition-colors hover:bg-black/[0.04] sm:flex dark:hover:bg-white/[0.06]"
+              >
+                <span
+                  className="size-8 shrink-0 rounded-full bg-[#c9f5db] bg-cover bg-center text-[10px] font-bold text-[#0b3b26]"
+                  style={
+                    user.image
+                      ? { backgroundImage: `url(${user.image})` }
+                      : undefined
+                  }
+                >
+                  {!user.image && (
+                    <span className="flex size-full items-center justify-center">
+                      {initials(user.name)}
+                    </span>
+                  )}
+                </span>
 
-          <Link
-            href="/sign-up"
-            className="hidden h-10 items-center rounded-[11px] bg-[#0e6b54] px-[18px] text-[14px] font-semibold text-white shadow-[0_4px_12px_rgba(11,107,71,0.2)] transition-colors hover:bg-[#0a5342] sm:inline-flex dark:bg-[#43d3ab] dark:text-[#06231b] dark:shadow-[0_0_18px_rgba(99,230,182,0.18)] dark:hover:bg-[#6ee7c3]"
-          >
-            Sign up
-          </Link>
+                <span className="hidden flex-col leading-tight lg:flex">
+                  <span className="max-w-[110px] truncate text-[12.5px] font-semibold text-[#27352f] dark:text-[#edf4ef]">
+                    {user.name}
+                  </span>
+                  <span className="text-[10px] capitalize text-[#5f6f68] dark:text-[#9dab9f]">
+                    {role}
+                  </span>
+                </span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                aria-label="Sign out"
+                title="Sign out"
+                className="hidden size-10 items-center justify-center rounded-[11px] text-[#5f6f68] transition-colors hover:bg-black/[0.04] hover:text-[#0f1a15] sm:flex dark:text-[#9dab9f] dark:hover:bg-white/[0.06] dark:hover:text-white"
+              >
+                <LogOut className="size-[18px]" />
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="hidden h-10 items-center rounded-[11px] px-[18px] text-[14px] font-semibold text-[#27352f] transition-colors hover:bg-black/[0.04] sm:inline-flex dark:text-[#cfdbd3] dark:hover:bg-white/[0.06] dark:hover:text-white"
+              >
+                Sign in
+              </Link>
+
+              <Link
+                href="/sign-up"
+                className="hidden h-10 items-center rounded-[11px] bg-[#0e6b54] px-[18px] text-[14px] font-semibold text-white shadow-[0_4px_12px_rgba(11,107,71,0.2)] transition-colors hover:bg-[#0a5342] sm:inline-flex dark:bg-[#43d3ab] dark:text-[#06231b] dark:shadow-[0_0_18px_rgba(99,230,182,0.18)] dark:hover:bg-[#6ee7c3]"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
 
           {/* Mobile menu button */}
           <button
@@ -127,21 +205,70 @@ export function SiteNavbar() {
             })}
           </nav>
 
-          <Link
-            href="/sign-in"
-            onClick={() => setMobileMenuOpen(false)}
-            className="mt-2 block border-t border-black/[0.07] px-3 py-3 text-[14px] font-semibold text-[#27352f] dark:border-white/[0.08] dark:text-[#cfdbd3]"
-          >
-            Sign in
-          </Link>
+          {user ? (
+            <div className="mt-2 border-t border-black/[0.07] pt-3 dark:border-white/[0.08]">
+              <div className="flex items-center gap-3 rounded-xl border border-black/[0.07] p-3 dark:border-white/[0.08]">
+                <span
+                  className="size-10 shrink-0 rounded-full bg-[#c9f5db] bg-cover bg-center text-[12px] font-bold text-[#0b3b26]"
+                  style={
+                    user.image
+                      ? { backgroundImage: `url(${user.image})` }
+                      : undefined
+                  }
+                >
+                  {!user.image && (
+                    <span className="flex size-full items-center justify-center">
+                      {initials(user.name)}
+                    </span>
+                  )}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-semibold text-[#27352f] dark:text-white">
+                    {user.name}
+                  </p>
+                  <p className="text-[11px] capitalize text-[#5f6f68] dark:text-[#9dab9f]">
+                    {role}
+                  </p>
+                </div>
+              </div>
 
-          <Link
-            href="/sign-up"
-            onClick={() => setMobileMenuOpen(false)}
-            className="mx-3 mb-1 block rounded-[11px] bg-[#0e6b54] px-4 py-2.5 text-center text-[14px] font-semibold text-white sm:hidden dark:bg-[#43d3ab] dark:text-[#06231b]"
-          >
-            Sign up
-          </Link>
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mt-2 flex items-center gap-2 rounded-[10px] px-3 py-3 text-[14px] font-semibold text-[#27352f] hover:bg-black/[0.04] dark:text-[#cfdbd3] dark:hover:bg-white/[0.06]"
+              >
+                <LayoutDashboard className="size-4" />
+                Dashboard
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-2 rounded-[10px] px-3 py-3 text-left text-[14px] font-semibold text-[#5f6f68] hover:bg-black/[0.04] dark:text-[#9dab9f] dark:hover:bg-white/[0.06]"
+              >
+                <LogOut className="size-4" />
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mt-2 block border-t border-black/[0.07] px-3 py-3 text-[14px] font-semibold text-[#27352f] dark:border-white/[0.08] dark:text-[#cfdbd3]"
+              >
+                Sign in
+              </Link>
+
+              <Link
+                href="/sign-up"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mx-3 mb-1 block rounded-[11px] bg-[#0e6b54] px-4 py-2.5 text-center text-[14px] font-semibold text-white sm:hidden dark:bg-[#43d3ab] dark:text-[#06231b]"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
         </div>
       )}
     </header>

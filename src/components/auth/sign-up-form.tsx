@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Check,
@@ -19,18 +20,22 @@ import {
   X,
 } from "lucide-react";
 import { GoogleIcon } from "@/components/auth/google-icon";
+import { authClient } from "@/lib/auth-client";
 
 const LABEL = "block text-[12.5px] font-semibold text-[#27352f] dark:text-[#cfdbd3]";
 const INPUT =
-  "mt-2 h-11 w-full rounded-[10px] border border-[#e5e1d6] bg-white px-3.5 text-[13.5px] text-[#0f1a15] outline-none transition placeholder:text-[#87948d] focus:border-[#0e6b54] focus:ring-[3px] focus:ring-[#0e6b54]/10 dark:border-[#263a30] dark:bg-[#0b1510] dark:text-white dark:placeholder:text-[#6f8579] dark:focus:border-[#43d3ab]";
+  "mt-2 h-11 w-full rounded-[10px] border border-[#e5e1d6] bg-white px-3.5 text-[13.5px] text-[#0f1a15] outline-none transition placeholder:text-[#87948d] focus:border-[#0e6b54] focus:ring-[3px] focus:ring-[#0e6b54]/10 disabled:opacity-60 dark:border-[#263a30] dark:bg-[#0b1510] dark:text-white dark:placeholder:text-[#6f8579] dark:focus:border-[#43d3ab]";
 const ROLE_CARD =
   "flex cursor-pointer items-center gap-3 rounded-[10px] border border-[#e5e1d6] bg-white p-3 transition hover:border-[#d2ccbc] peer-checked:border-[#0e6b54] peer-checked:bg-[#e4f2ec] peer-checked:ring-2 peer-checked:ring-[#0e6b54]/15 dark:border-[#263a30] dark:bg-[#0b1510] dark:peer-checked:border-[#43d3ab] dark:peer-checked:bg-[#0c2a20] dark:peer-checked:ring-[#43d3ab]/15";
 
-export function SignUpForm() {
+export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageName, setImageName] = useState("");
   const [imageError, setImageError] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageFileRef = useRef<File | null>(null);
 
@@ -78,14 +83,72 @@ export function SignUpForm() {
     { label: "One lowercase letter", ok: /[a-z]/.test(password) },
   ];
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
 
-    // TODO(Better Auth + storage): upload imageFileRef.current to your provider,
-    // then pass its public URL as `image` in the client call, e.g.
-    // await authClient.signUp.email({
-    //   name, email, password, image: uploadedImageUrl, role, callbackURL: "/",
-    // });
+    setPending(true);
+    setError("");
+
+    const form = new FormData(event.currentTarget);
+    const accountType =
+      form.get("role") === "technician" ? "technician" : "customer";
+
+    const { error: authError } = await authClient.signUp.email({
+      name: String(form.get("name") ?? ""),
+      email: String(form.get("email") ?? ""),
+      password: String(form.get("password") ?? ""),
+      accountType,
+      callbackURL: "/dashboard",
+    });
+
+    if (authError) {
+      setError(
+        authError.message || "Unable to create your account. Please try again.",
+      );
+      setPending(false);
+      return;
+    }
+
+    // The account exists at this point. Avatar upload is best-effort so a
+    // storage problem never leaves the user without an account.
+    const imageFile = imageFileRef.current;
+    if (imageFile) {
+      try {
+        const body = new FormData();
+        body.append("file", imageFile);
+        const response = await fetch("/api/avatar", { method: "POST", body });
+
+        if (response.ok) {
+          const data = (await response.json()) as { url?: string };
+          if (data.url) {
+            await authClient.updateUser({ image: data.url });
+          }
+        }
+      } catch {
+        // Ignore avatar failures; the user can upload a photo later.
+      }
+    }
+
+    router.push("/dashboard");
+    router.refresh();
+  }
+
+  async function handleGoogle() {
+    if (pending) return;
+
+    setPending(true);
+    setError("");
+
+    const { error: authError } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard",
+    });
+
+    if (authError) {
+      setError(authError.message || "Google sign-up is unavailable.");
+      setPending(false);
+    }
   }
 
   return (
@@ -96,6 +159,15 @@ export function SignUpForm() {
       <p className="mt-2 text-[13.5px] leading-[1.6] text-[#5f6f68] dark:text-[#9dab9f]">
         Book repairs as a customer, or find work as a verified technician.
       </p>
+
+      {error && (
+        <p
+          role="alert"
+          className="mt-4 rounded-[10px] border border-[#b42318]/20 bg-[#fcecea] px-3 py-2.5 text-[12px] leading-snug text-[#b42318] dark:border-[#ff8f82]/20 dark:bg-[#2e1613] dark:text-[#ff8f82]"
+        >
+          {error}
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
         <div className="flex items-center gap-4">
@@ -122,7 +194,8 @@ export function SignUpForm() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#d2ccbc] bg-white px-3 text-[12px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-[#263a30] dark:bg-[#0b1510] dark:text-[#edf4ef] dark:hover:bg-[#101a16]"
+                disabled={pending}
+                className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#d2ccbc] bg-white px-3 text-[12px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#263a30] dark:bg-[#0b1510] dark:text-[#edf4ef] dark:hover:bg-[#101a16]"
               >
                 <ImagePlus className="size-4" />
                 Upload photo
@@ -132,7 +205,8 @@ export function SignUpForm() {
                 <button
                   type="button"
                   onClick={clearImage}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-[8px] px-2 text-[12px] font-semibold text-[#5f6f68] transition hover:text-[#0f1a15] dark:text-[#9dab9f] dark:hover:text-white"
+                  disabled={pending}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-[8px] px-2 text-[12px] font-semibold text-[#5f6f68] transition hover:text-[#0f1a15] disabled:opacity-60 dark:text-[#9dab9f] dark:hover:text-white"
                 >
                   <X className="size-3.5" />
                   Remove
@@ -147,7 +221,6 @@ export function SignUpForm() {
               <p className="mt-1 text-[10.5px] text-[#b42318]">{imageError}</p>
             )}
 
-            {/* Better Auth stores a URL, not a File: upload this to storage first. */}
             <input
               ref={fileInputRef}
               id="avatar"
@@ -171,6 +244,7 @@ export function SignUpForm() {
             autoComplete="name"
             placeholder="e.g. Ayesha Rahman"
             required
+            disabled={pending}
             className={INPUT}
           />
         </div>
@@ -186,12 +260,12 @@ export function SignUpForm() {
             autoComplete="email"
             placeholder="you@example.com"
             required
+            disabled={pending}
             className={INPUT}
           />
         </div>
 
-        {/* Better Auth: register `role` as an additional user field before sending it. */}
-        <fieldset>
+        <fieldset disabled={pending}>
           <legend className={LABEL}>I am joining as</legend>
           <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
             <label>
@@ -268,6 +342,7 @@ export function SignUpForm() {
             placeholder="At least 8 characters"
             minLength={8}
             required
+            disabled={pending}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className={INPUT}
@@ -296,6 +371,7 @@ export function SignUpForm() {
             type="checkbox"
             name="acceptTerms"
             required
+            disabled={pending}
             className="mt-0.5 size-4 shrink-0 rounded border-[#d2ccbc] accent-[#0e6b54] dark:accent-[#43d3ab]"
           />
           <span>
@@ -322,27 +398,33 @@ export function SignUpForm() {
 
         <button
           type="submit"
-          className="mt-1 flex h-[52px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#0e6b54] text-[14px] font-semibold text-white transition hover:bg-[#0a5342] dark:bg-[#43d3ab] dark:text-[#06231b] dark:hover:bg-[#6ee7c3]"
+          disabled={pending}
+          className="mt-1 flex h-[52px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#0e6b54] text-[14px] font-semibold text-white transition hover:bg-[#0a5342] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#43d3ab] dark:text-[#06231b] dark:hover:bg-[#6ee7c3]"
         >
           <ArrowRight className="size-4" />
-          Create account
+          {pending ? "Creating account…" : "Create account"}
         </button>
       </form>
 
-      <div className="my-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#87948d]">
-        <span className="h-px flex-1 bg-[#e5e1d6] dark:bg-white/10" />
-        or
-        <span className="h-px flex-1 bg-[#e5e1d6] dark:bg-white/10" />
-      </div>
+      {googleEnabled && (
+        <>
+          <div className="my-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#87948d]">
+            <span className="h-px flex-1 bg-[#e5e1d6] dark:bg-white/10" />
+            or
+            <span className="h-px flex-1 bg-[#e5e1d6] dark:bg-white/10" />
+          </div>
 
-      {/* TODO(Better Auth): wire this to authClient.signIn.social({ provider: "google" }). */}
-      <button
-        type="button"
-        className="flex h-[46px] w-full items-center justify-center gap-2.5 rounded-[10px] border border-[#e5e1d6] bg-white text-[13.5px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-[#263a30] dark:bg-[#0b1510] dark:text-[#edf4ef] dark:hover:bg-[#101a16]"
-      >
-        <GoogleIcon />
-        Sign up with Google
-      </button>
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={pending}
+            className="flex h-[46px] w-full items-center justify-center gap-2.5 rounded-[10px] border border-[#e5e1d6] bg-white text-[13.5px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#263a30] dark:bg-[#0b1510] dark:text-[#edf4ef] dark:hover:bg-[#101a16]"
+          >
+            <GoogleIcon />
+            Sign up with Google
+          </button>
+        </>
+      )}
 
       <p className="mt-6 text-center text-[12.5px] text-[#5f6f68] dark:text-[#9dab9f]">
         Already have an account?{" "}

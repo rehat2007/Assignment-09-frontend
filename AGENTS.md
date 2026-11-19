@@ -10,14 +10,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Fix Mate frontend
 
-Marketing and catalogue UI for a home-repair marketplace (Next.js 16 App Router, React 19.3, TypeScript, Tailwind CSS v4, shadcn `base-nova`). Routes are `/`, `/services`, `/services/[id]`, `/how-it-works`, `/sign-in`, and `/sign-up`; there is no backend, auth, database, test suite, or CI. Content is hardcoded.
+FixMate marketplace app (Next.js 16 App Router, React 19.3, TypeScript, Tailwind CSS v4, shadcn `base-nova`) with Better Auth + MongoDB. Pages are `/`, `/services`, `/services/[id]`, `/how-it-works`, `/sign-in`, `/sign-up`, and `/dashboard` plus role pages. Auth APIs live under `/api/auth` and avatar upload under `/api/avatar`. There is no test suite or CI; service content is hardcoded.
 
 - `src/app/page.tsx` composes the homepage sections in this order: hero, category strip, latest services, how it works, trust band, popular categories, why FixMate, testimonials, CTA, then the footer outside `<main>`. `layout.tsx` adds the navbar, Google fonts (Plus Jakarta headings, Inter body), and a pre-paint theme script.
 - `/services` is a server component whose filters live entirely in the URL (`q`, `category`, `mode`, `sort`, `page`); category/mode chips and pagination are links, and the search/sort controls are a plain GET form. Keep it that way rather than adding client filter state.
 - `/services/[id]` is a basic detail page (unknown ids 404). `View details` links come from the shared card, so new listing links should use `/services/<id>`.
 - `/how-it-works` is the About/pipeline page: hero job tracker, principles band, five-stage pipeline, values, native `<details>` FAQ, and a closing CTA. Its content is local to `src/app/how-it-works/page.tsx`; the navbar and footer both link there.
-- `/sign-in` and `/sign-up` use `src/components/auth/auth-shell.tsx` and are **UI only**. The form components have no-op submit handlers marked with `TODO(Better Auth)`; keep field names `name`, `email`, `password`, `rememberMe`, and role values `customer` / `technician` when wiring `authClient`. Do not add password hashing or auth logic in the UI, and keep the admin role disabled for self sign-up. `SiteNavbar` returns `null` on these two routes because the auth shell has its own header.
-- Sign-up has an optional profile-photo picker. The file stays in `imageFileRef` and is previewed with a blob URL; Better Auth stores an `image` **URL**, so upload the file to storage first and pass the resulting URL to `authClient.signUp.email`. Do not send the raw `File` to Better Auth.
+- `/sign-in` and `/sign-up` use `src/components/auth/auth-shell.tsx`; the navbar hides itself on those routes. Both forms call `authClient` and redirect to `/dashboard`; sign-in has `rememberMe`, and sign-up sends `accountType` (`customer` or `technician`).
+- Sign-up has an optional profile-photo picker. The file is uploaded to `/api/avatar` after the account is created (the route requires the new session), then its URL is saved with `authClient.updateUser({ image })`. Files land in `data/avatars` (gitignored); replace that route with S3/Cloudinary before deploying to serverless.
+- Auth is Better Auth 1.7 + MongoDB via `src/lib/auth.ts`, `src/lib/mongo.ts`, and `src/lib/auth-client.ts`. MongoDB requires no schema migration; the adapter creates its indexes. `MONGODB_URI`, `MONGODB_DB`, `BETTER_AUTH_SECRET`, and `BETTER_AUTH_URL` live in the single gitignored `.env` file. `MONGODB_DNS_SERVERS` (e.g. `1.1.1.1`) is an optional workaround for local Node resolvers that refuse SRV lookups. MongoDB must be reachable before auth pages/APIs work.
+- `accountType` is a Better Auth additional user field and is sanitized in `databaseHooks.user.create.before` to `customer` or `technician`. Admin access uses the admin plugin's `role`, which public sign-up cannot set. Bootstrap the first admin with `npm run auth:admin` after setting `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+- `/dashboard/*` is protected server-side by `src/lib/authz.ts` (`getSession`, `requireUser`, `requireRole`). There is intentionally no proxy/middleware authorization layer; each role page calls `requireRole` and redirects to `/dashboard` when unauthorized. Keep authorization checks in server components/route handlers, never only in the client.
+- Google buttons render only when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are both set. Google sign-up creates a customer account; admin roles come only from the seed/admin tooling.
 - Client components are `site-navbar.tsx`, `home-motion.tsx`, `theme-toggle.tsx`, and the auth form components; everything else renders on the server. Keep new sections server-side unless they need state/effects.
 - The visual reference is the standalone demo at `C:\web_dev\assignment_09-demo` (vanilla-JS hash-router SPA: `src/public.js`, `src/styles.css`, `src/data.js`). Use it to compare copy, spacing, and colors.
 - Footer/legal links (`/privacy`, `/terms`, `/support`) and `/forgot-password` are scaffold placeholders pointing at routes that don't exist. Don't treat those 404s as regressions unless asked to build the pages.
@@ -29,6 +33,7 @@ Marketing and catalogue UI for a home-repair marketplace (Next.js 16 App Router,
 - `npm run lint` — ESLint flat config (`eslint.config.mjs`); no arguments needed.
 - `npx tsc --noEmit` — standalone typecheck (there is no `typecheck` script). `tsconfig.tsbuildinfo` is a local artifact.
 - After adding/moving routes, run `npx next typegen` to refresh generated route types.
+- `npm run auth:admin` — creates/promotes an admin (`ADMIN_EMAIL`, `ADMIN_PASSWORD`, optional `ADMIN_NAME`). Run it through `tsx`, which loads `.env`.
 - Use npm (`package-lock.json` is the only lockfile). No tests are configured — don't invent a test command or add a runner unless asked.
 
 ## Data, cards, and animation hooks
