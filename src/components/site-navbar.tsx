@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, Moon, Sun, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "cn";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Keeping the links in one place makes the desktop and mobile menus easy to update.
 const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Services", href: "/services" },
-  { label: "How it works", href: "/#how-it-works" },
+  { label: "How it works", href: "/how-it-works" },
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -22,16 +23,8 @@ export function SiteNavbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  function toggleTheme() {
-    const root = document.documentElement;
-    const isDark = root.classList.toggle("dark");
-
-    try {
-      localStorage.setItem("fixmate-theme", isDark ? "dark" : "light");
-    } catch {
-      // The page still changes theme even if the browser blocks localStorage.
-    }
-  }
+  // Auth pages render their own full-screen shell and header.
+  if (pathname === "/sign-in" || pathname === "/sign-up") return null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-black/[0.07] bg-[#f6f4ee]/95 backdrop-blur-md dark:border-white/[0.08] dark:bg-[#080f0c]/95">
@@ -66,16 +59,7 @@ export function SiteNavbar() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          {/* The sun is visible in dark mode; the moon is visible in light mode. */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label="Toggle color theme"
-            className="flex size-10 items-center justify-center rounded-[11px] text-[#27352f] transition-colors hover:bg-black/[0.04] hover:text-black dark:text-[#cfdbd3] dark:hover:bg-white/[0.06] dark:hover:text-white"
-          >
-            <Sun className="hidden size-[19px] dark:block" aria-hidden="true" />
-            <Moon className="size-[19px] dark:hidden" aria-hidden="true" />
-          </button>
+          <ThemeToggle />
 
           <span
             className="mx-1 hidden h-6 w-px bg-black/10 sm:block dark:bg-white/15"

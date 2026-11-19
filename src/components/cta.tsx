@@ -29,7 +29,7 @@ export function CtaSection() {
 
           <div className="relative flex flex-col gap-3 sm:flex-row">
             <a
-              href="#how-it-works"
+              href="/how-it-works"
               className="inline-flex h-[52px] items-center justify-center rounded-[13px] border border-[#d2ccbc] px-6 text-[15px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-white/15 dark:text-white dark:hover:bg-white/[0.06]"
             >
               How it works
