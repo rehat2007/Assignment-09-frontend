@@ -27,6 +27,7 @@ const INPUT =
   "mt-2 h-11 w-full rounded-[10px] border border-[#e5e1d6] bg-white px-3.5 text-[13.5px] text-[#0f1a15] outline-none transition placeholder:text-[#87948d] focus:border-[#0e6b54] focus:ring-[3px] focus:ring-[#0e6b54]/10 disabled:opacity-60 dark:border-[#263a30] dark:bg-[#0b1510] dark:text-white dark:placeholder:text-[#6f8579] dark:focus:border-[#43d3ab]";
 const ROLE_CARD =
   "flex cursor-pointer items-center gap-3 rounded-[10px] border border-[#e5e1d6] bg-white p-3 transition hover:border-[#d2ccbc] peer-checked:border-[#0e6b54] peer-checked:bg-[#e4f2ec] peer-checked:ring-2 peer-checked:ring-[#0e6b54]/15 dark:border-[#263a30] dark:bg-[#0b1510] dark:peer-checked:border-[#43d3ab] dark:peer-checked:bg-[#0c2a20] dark:peer-checked:ring-[#43d3ab]/15";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
@@ -117,7 +118,11 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
       try {
         const body = new FormData();
         body.append("file", imageFile);
-        const response = await fetch("/api/avatar", { method: "POST", body });
+        const response = await fetch(`${API_URL}/api/v1/uploads/avatar`, {
+          method: "POST",
+          body,
+          credentials: "include",
+        });
 
         if (response.ok) {
           const data = (await response.json()) as { url?: string };
@@ -142,7 +147,8 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
 
     const { error: authError } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      // The OAuth callback runs on Express, so return to the frontend origin.
+      callbackURL: `${window.location.origin}/dashboard`,
     });
 
     if (authError) {

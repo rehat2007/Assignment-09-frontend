@@ -34,6 +34,7 @@ const PERMISSIONS: Record<AppRole, string> = {
 };
 
 const TABS = ["Personal details", "Security", "Notifications"] as const;
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export function ProfileForm({
   user,
@@ -132,7 +133,11 @@ export function ProfileForm({
     if (fileToUpload.current) {
       const body = new FormData();
       body.append("file", fileToUpload.current);
-      const response = await fetch("/api/avatar", { method: "POST", body });
+      const response = await fetch(`${API_URL}/api/v1/uploads/avatar`, {
+        method: "POST",
+        body,
+        credentials: "include",
+      });
 
       if (!response.ok) {
         const data = (await response.json().catch(() => ({}))) as {

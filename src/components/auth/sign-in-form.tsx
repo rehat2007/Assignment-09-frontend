@@ -49,7 +49,8 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
 
     const { error: authError } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      // The OAuth callback runs on Express, so return to the frontend origin.
+      callbackURL: `${window.location.origin}/dashboard`,
     });
 
     if (authError) {
