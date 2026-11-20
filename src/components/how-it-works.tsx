@@ -3,16 +3,19 @@ import { STEPS } from "@/lib/home-data";
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="scroll-mt-[74px] py-10 lg:py-14">
-      <div className="mx-auto max-w-[1264px] px-6">
-        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+    <section
+      id="how-it-works"
+      className="scroll-mt-[74px] py-[clamp(38px,4.5vw,60px)]"
+    >
+      <div className="site-container">
+        <div className="flex flex-col gap-5 min-[761px]:flex-row min-[761px]:flex-wrap min-[761px]:items-end min-[761px]:justify-between">
           <div data-reveal>
             <p className="flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#0e6b54] dark:text-[#43d3ab]">
               <span className="h-px w-[18px] bg-current opacity-60" />
               How FixMate works
             </p>
 
-            <h2 className="mt-3 font-heading text-[2rem] font-extrabold leading-[1.02] tracking-[-0.038em] text-[#0f1a15] sm:text-[2.65rem] dark:text-white">
+            <h2 className="mt-3 font-heading text-[clamp(1.85rem,3.1vw,2.65rem)] font-extrabold leading-[1.02] tracking-[-0.038em] text-[#0f1a15] dark:text-white">
               Four steps. Zero guesswork.
             </h2>
           </div>
@@ -28,7 +31,7 @@ export function HowItWorks() {
 
         <ol
           data-reveal-group
-          className="mt-11 grid grid-cols-1 gap-y-9 sm:grid-cols-2 lg:grid-cols-4"
+          className="mt-[34px] grid grid-cols-1 gap-y-5 min-[561px]:grid-cols-2 min-[561px]:gap-y-[26px] min-[981px]:grid-cols-4 min-[981px]:gap-y-0"
         >
           {STEPS.map((step, index) => {
             const Icon = step.icon;
@@ -36,7 +39,7 @@ export function HowItWorks() {
             return (
               <li
                 key={step.title}
-                className="relative lg:px-5 lg:first:pl-0 lg:last:pr-0"
+                className="relative min-[981px]:px-[22px] min-[981px]:first:pl-0 min-[981px]:last:pr-0"
               >
                 <div className="flex items-center gap-3">
                   <span
@@ -50,19 +53,19 @@ export function HowItWorks() {
                   </span>
 
                   {index < STEPS.length - 1 && (
-                    <span className="h-px flex-1 border-t border-dashed border-[#d2ccbc] dark:border-white/15" />
+                    <span className="hidden h-px flex-1 border-t border-dashed border-[#d2ccbc] min-[981px]:block dark:border-white/15" />
                   )}
 
                   <Icon
-                    className="hidden size-[18px] shrink-0 text-[#d2ccbc] lg:block dark:text-white/20"
+                    className="absolute right-0 top-0 hidden size-[18px] shrink-0 text-[#d2ccbc] min-[561px]:block dark:text-white/20"
                     strokeWidth={1.7}
                   />
                 </div>
 
-                <h3 className="mt-4 font-heading text-[15px] font-bold text-[#0f1a15] dark:text-white">
+                <h3 className="mt-4 font-heading text-[15px] font-bold leading-[1.12] text-[#0f1a15] dark:text-white">
                   {step.title}
                 </h3>
-                <p className="mt-1.5 max-w-[280px] text-[13px] leading-[1.6] text-[#5f6f68] dark:text-[#9dab9f]">
+                <p className="mt-[7px] text-[13px] leading-[1.6] text-[#5f6f68] dark:text-[#9dab9f]">
                   {step.description}
                 </p>
               </li>

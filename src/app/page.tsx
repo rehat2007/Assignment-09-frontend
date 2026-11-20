@@ -4,7 +4,6 @@ import { LatestServices } from "@/components/latest-services";
 import { HowItWorks } from "@/components/how-it-works";
 import { TrustBand } from "@/components/trust-band";
 import { PopularCategories } from "@/components/popular-categories";
-import { WhyFixmate } from "@/components/why-fixmate";
 import { Testimonials } from "@/components/testimonials";
 import { CtaSection } from "@/components/cta";
 import { SiteFooter } from "@/components/site-footer";
@@ -31,7 +30,6 @@ export default function Home() {
         <HowItWorks />
         <TrustBand />
         <PopularCategories />
-        <WhyFixmate />
         <Testimonials />
         <CtaSection />
       </main>

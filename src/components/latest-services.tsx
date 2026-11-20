@@ -5,20 +5,23 @@ import { ServiceCard } from "@/components/service-card";
 
 export function LatestServices() {
   return (
-    <section id="services" className="scroll-mt-[74px] py-14 lg:py-20">
-      <div className="mx-auto max-w-[1264px] px-6">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+    <section
+      id="services"
+      className="scroll-mt-[74px] py-[clamp(52px,6.5vw,92px)]"
+    >
+      <div className="site-container">
+        <div className="flex flex-col gap-7 min-[761px]:flex-row min-[761px]:flex-wrap min-[761px]:items-end min-[761px]:justify-between">
           <div data-reveal className="max-w-[640px]">
             <p className="flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#0e6b54] dark:text-[#43d3ab]">
               <span className="h-px w-[18px] bg-current opacity-60" />
               Latest services
             </p>
 
-            <h2 className="mt-3 font-heading text-[2rem] font-extrabold leading-[1.02] tracking-[-0.038em] text-[#0f1a15] sm:text-[2.65rem] dark:text-white">
+            <h2 className="mt-3 font-heading text-[clamp(1.85rem,3.1vw,2.65rem)] font-extrabold leading-[1.02] tracking-[-0.038em] text-[#0f1a15] dark:text-white">
               Fresh from our verified technicians.
             </h2>
 
-            <p className="mt-3 max-w-[58ch] text-[15px] leading-[1.65] text-[#5f6f68] sm:text-[17px] dark:text-[#9dab9f]">
+            <p className="mt-3 max-w-[58ch] text-[clamp(15px,1.25vw,17px)] leading-[1.65] text-[#5f6f68] dark:text-[#9dab9f]">
               The six newest approved listings on FixMate. Same card size, same
               clear pricing — pick one and see the full breakdown.
             </p>
@@ -35,7 +38,7 @@ export function LatestServices() {
 
         <div
           data-reveal-group
-          className="mt-8 grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-[34px] grid grid-cols-1 gap-4 min-[761px]:grid-cols-2 min-[761px]:gap-[22px] min-[1101px]:grid-cols-3"
         >
           {FEATURED_SERVICES.map((service) => (
             <ServiceCard key={service.id} service={service} />

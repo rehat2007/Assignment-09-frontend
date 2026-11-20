@@ -6,14 +6,14 @@ import { CATEGORY_ICONS } from "@/lib/service-styles";
 export function CategoryStrip() {
   return (
     <div className="border-y border-black/[0.08] bg-white/55 dark:border-white/[0.07] dark:bg-white/[0.02]">
-      <div className="mx-auto flex max-w-[1264px] flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
+      <div className="site-container flex flex-wrap items-center justify-between gap-[18px] py-4">
         <span className="text-[11px] font-bold uppercase tracking-[0.13em] text-[#87948d]">
           Popular right now
         </span>
 
         <nav
           aria-label="Popular categories"
-          className="order-3 -mx-4 flex w-full items-center gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:order-none sm:mx-0 sm:w-auto sm:flex-1 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0"
+          className="order-3 flex w-full items-center gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[761px]:order-none min-[761px]:w-auto min-[761px]:flex-1 min-[761px]:flex-wrap min-[761px]:justify-center min-[761px]:overflow-visible min-[761px]:pb-0"
         >
           {CATEGORY_SUMMARY.map(({ name }) => {
             const Icon = CATEGORY_ICONS[name];

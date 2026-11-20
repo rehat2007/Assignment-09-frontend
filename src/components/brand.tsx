@@ -4,7 +4,7 @@ import { Wrench } from "lucide-react";
 export function Brand({ onDark = false }: { onDark?: boolean }) {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-[11px]" aria-label="FixMate home">
-      <span className="flex size-[38px] items-center justify-center rounded-[11px] bg-gradient-to-br from-[#43b986] via-[#178257] to-[#075136] shadow-[0_4px_14px_rgba(11,107,69,0.25)] dark:from-[#bdf9df] dark:via-[#79ebc2] dark:to-[#3dd3a1] dark:shadow-[0_0_22px_rgba(95,227,176,0.22)]">
+      <span className="flex size-[34px] items-center justify-center rounded-[10px] bg-gradient-to-br from-[#43b986] via-[#178257] to-[#075136] shadow-[0_4px_14px_rgba(11,107,69,0.25)] min-[761px]:size-[38px] min-[761px]:rounded-[11px] dark:from-[#bdf9df] dark:via-[#79ebc2] dark:to-[#3dd3a1] dark:shadow-[0_0_22px_rgba(95,227,176,0.22)]">
         <Wrench
           className="size-[21px] text-white dark:text-[#052e21]"
           strokeWidth={2.6}
@@ -14,7 +14,7 @@ export function Brand({ onDark = false }: { onDark?: boolean }) {
 
       <span className="flex flex-col">
         <span
-          className={`text-[20px] font-extrabold leading-none tracking-[-0.045em] ${
+          className={`text-[18px] font-extrabold leading-none tracking-[-0.045em] min-[761px]:text-[20px] ${
             onDark ? "text-white" : "text-[#101613] dark:text-white"
           }`}
         >
@@ -30,7 +30,7 @@ export function Brand({ onDark = false }: { onDark?: boolean }) {
           </span>
         </span>
         <span
-          className={`mt-0.5 block text-[9px] font-semibold uppercase leading-[1.2] tracking-[0.17em] ${
+          className={`mt-0.5 hidden text-[9px] font-semibold uppercase leading-[1.2] tracking-[0.17em] min-[761px]:block ${
             onDark ? "text-white/45" : "text-[#6c7570] dark:text-[#8ba399]"
           }`}
         >

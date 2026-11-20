@@ -26,9 +26,9 @@ const TRUST_ITEMS = [
 export function HeroSection() {
   return (
     <section className="relative z-10">
-      <div className="mx-auto grid max-w-[1264px] items-center gap-12 px-6 pb-12 pt-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-10 lg:pb-16">
+      <div className="site-container grid items-center gap-[18px] pt-[clamp(32px,4vw,46px)] pb-[clamp(44px,5vw,68px)] min-[861px]:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] min-[861px]:gap-7 min-[1101px]:gap-[56px]">
         {/* Left side: headline, search and trust signals */}
-        <div data-hero className="lg:py-6">
+        <div data-hero className="flex flex-col gap-5 py-3 min-[861px]:py-6">
           <div className="inline-flex w-fit items-center gap-[9px] rounded-full border border-[#e5e1d6] bg-white py-1.5 pl-[7px] pr-[13px] text-[12.5px] font-medium text-[#27352f] shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-[#d6e4dc]">
             <span className="flex size-5 items-center justify-center rounded-full bg-[#e4f2ec] text-[#0e6b54] dark:bg-[#112c25] dark:text-[#43d3ab]">
               <ShieldCheck className="size-3" />
@@ -40,7 +40,7 @@ export function HeroSection() {
             </span>
           </div>
 
-          <h1 className="mt-5 max-w-[650px] font-heading text-[2.1rem] font-extrabold leading-[1.03] tracking-[-0.045em] text-[#0f1a15] min-[360px]:text-[2.4rem] min-[380px]:text-[2.7rem] sm:text-[3.4rem] lg:text-[3.9rem] dark:text-white">
+          <h1 className="max-w-[650px] font-heading text-[clamp(2.5rem,4.5vw,3.85rem)] font-extrabold leading-[1.015] tracking-[-0.045em] text-[#0f1a15] dark:text-white">
             Broken device?
             <br />
             Get it{" "}
@@ -64,7 +64,7 @@ export function HeroSection() {
             by a pro.
           </h1>
 
-          <p className="mt-6 max-w-[515px] text-[16px] leading-[1.65] text-[#5c6861] sm:text-[17px] dark:text-[#97a9a0]">
+          <p className="max-w-[46ch] text-[clamp(14.5px,1.3vw,16.5px)] leading-[1.65] text-[#5c6861] dark:text-[#97a9a0]">
             Phones, laptops, ACs, fridges, washing machines and wiring
             <br className="hidden sm:block" /> — booked in minutes, tracked at
             every step, and paid for only when the repair is done.
@@ -73,7 +73,8 @@ export function HeroSection() {
           <form
             action="/services"
             method="get"
-            className="mt-7 flex max-w-[560px] flex-col gap-2 rounded-[15px] border border-[#e5e1d6] bg-white p-1.5 shadow-[0_18px_50px_rgba(24,56,39,0.09)] focus-within:border-[#0e6b54] sm:flex-row sm:items-center sm:gap-0 dark:border-[#1d4c38] dark:bg-[#07130d]/95 dark:shadow-[0_0_0_1px_rgba(46,180,126,0.06),0_0_34px_rgba(32,160,112,0.12)]"
+            role="search"
+            className="flex max-w-[560px] flex-col gap-1.5 rounded-[15px] border border-[#e5e1d6] bg-white p-1.5 shadow-[0_18px_50px_rgba(24,56,39,0.09)] focus-within:border-[#0e6b54] min-[721px]:flex-row min-[721px]:items-center min-[721px]:gap-1.5 dark:border-[#1d4c38] dark:bg-[#07130d]/95 dark:shadow-[0_0_0_1px_rgba(46,180,126,0.06),0_0_34px_rgba(32,160,112,0.12)]"
           >
             <div className="flex min-w-0 flex-1 items-center gap-3 px-3">
               <Search className="size-4 shrink-0 text-[#8a968f] dark:text-[#769184]" />
@@ -86,7 +87,7 @@ export function HeroSection() {
               />
             </div>
 
-            <span className="hidden h-7 w-px bg-black/10 sm:block dark:bg-white/10" />
+            <span className="hidden h-6 w-px bg-black/10 min-[721px]:block dark:bg-white/10" />
 
             <div className="relative flex items-center gap-2 px-3">
               <LayoutGrid className="size-4 shrink-0 text-[#8a968f] dark:text-[#769184]" />
@@ -94,7 +95,7 @@ export function HeroSection() {
                 name="category"
                 aria-label="Category"
                 defaultValue=""
-                className="h-10 w-full cursor-pointer appearance-none bg-transparent pr-6 text-[13.5px] text-[#5f6f68] outline-none sm:w-[130px] dark:text-[#b6c8be] dark:[&>option]:bg-[#07130d]"
+                className="h-10 w-full cursor-pointer appearance-none bg-transparent pr-6 text-[13.5px] text-[#5f6f68] outline-none min-[721px]:w-[130px] dark:text-[#b6c8be] dark:[&>option]:bg-[#07130d]"
               >
                 <option value="">All categories</option>
                 {CATEGORY_SUMMARY.map(({ name }) => (
@@ -115,7 +116,7 @@ export function HeroSection() {
             </button>
           </form>
 
-          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
             <div className="flex -space-x-2.5">
               {AVATARS.map((avatar) => (
                 <span
@@ -138,12 +139,12 @@ export function HeroSection() {
                 {[0, 1, 2, 3, 4].map((star) => (
                   <Star
                     key={star}
-                    className="size-3 fill-current"
+                    className="size-[13px] fill-current"
                     strokeWidth={1.5}
                   />
                 ))}
               </div>
-              <p className="mt-1 text-[12px] text-[#5d6962] dark:text-[#93a69c]">
+              <p className="mt-0.5 text-[12.5px] leading-[1.35] text-[#5d6962] dark:text-[#93a69c]">
                 <span className="font-bold text-[#111814] dark:text-white">
                   4.9/5
                 </span>{" "}
@@ -152,10 +153,10 @@ export function HeroSection() {
             </div>
           </div>
 
-          <ul className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2.5 text-[12px] font-medium text-[#5a6760] dark:text-[#8fa39a]">
+          <ul className="flex flex-wrap items-center gap-x-[18px] gap-y-2.5 text-[12.5px] font-medium text-[#5a6760] dark:text-[#8fa39a]">
             {TRUST_ITEMS.map((item) => (
               <li key={item} className="flex items-center gap-1.5">
-                <CircleCheck className="size-4 shrink-0 text-[#0e6b54] dark:text-[#63e6b6]" />
+                <CircleCheck className="size-[15px] shrink-0 text-[#0e6b54] dark:text-[#63e6b6]" />
                 {item}
               </li>
             ))}
@@ -163,7 +164,7 @@ export function HeroSection() {
         </div>
 
         {/* Right side: product illustration */}
-        <div data-hero-art className="mt-4 lg:mt-0">
+        <div data-hero-art>
           <RepairVisual />
         </div>
       </div>

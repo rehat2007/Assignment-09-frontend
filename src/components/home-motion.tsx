@@ -55,17 +55,35 @@ export function HomeMotion() {
         });
       });
 
-      gsap.utils.toArray<HTMLElement>("[data-float]").forEach((element, index) => {
+      gsap.utils.toArray<HTMLElement>("[data-float]").forEach((element) => {
+        const delay = Number(element.dataset.floatDelay ?? 0);
+
         gsap.to(element, {
           y: -7,
           duration: 7,
-          delay: index * 0.9,
+          delay,
           ease: "sine.inOut",
           repeat: -1,
           yoyo: true,
         });
       });
 
+      const scan = document.querySelector<HTMLElement>("[data-scan]");
+
+      if (scan) {
+        gsap.fromTo(
+          scan,
+          { top: "30%", opacity: 0.2 },
+          {
+            top: "68%",
+            opacity: 1,
+            duration: 1.7,
+            ease: "sine.inOut",
+            repeat: -1,
+            yoyo: true,
+          },
+        );
+      }
     });
 
     return () => motion.revert();

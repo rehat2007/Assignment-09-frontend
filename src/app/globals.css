@@ -152,3 +152,24 @@
     }
   }
 }
+
+/* Shared public-page container: matches the reference 1216px content width
+   with 14/16/24px side gutters at the demo's breakpoints. */
+.site-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1264px;
+  padding-inline: 14px;
+}
+
+@media (min-width: 561px) {
+  .site-container {
+    padding-inline: 16px;
+  }
+}
+
+@media (min-width: 761px) {
+  .site-container {
+    padding-inline: 24px;
+  }
+}

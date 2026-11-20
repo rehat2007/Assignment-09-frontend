@@ -68,12 +68,12 @@ export function SiteNavbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-black/[0.07] bg-[#f6f4ee]/95 backdrop-blur-md dark:border-white/[0.08] dark:bg-[#080f0c]/95">
-      <div className="mx-auto flex h-[74px] max-w-[1264px] items-center gap-4 px-4 sm:gap-7 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-black/[0.07] bg-[#f6f4ee]/80 backdrop-blur-md dark:border-white/[0.08] dark:bg-[#080f0c]/80">
+      <div className="site-container flex h-[64px] items-center gap-4 min-[761px]:h-[74px] min-[861px]:gap-7">
         <Brand />
 
         {/* Desktop navigation */}
-        <nav className="ml-1.5 hidden h-[74px] items-center gap-1 md:flex">
+        <nav className="ml-1.5 hidden h-[64px] items-center gap-1 min-[761px]:h-[74px] min-[861px]:flex">
           {NAV_LINKS.map((link) => {
             const isActive = isActivePath(pathname, link.href);
 
@@ -103,7 +103,7 @@ export function SiteNavbar() {
           <ThemeToggle />
 
           <span
-            className="mx-1 hidden h-6 w-px bg-black/10 sm:block dark:bg-white/15"
+            className="mx-1 hidden h-6 w-px bg-black/10 min-[861px]:block dark:bg-white/15"
             aria-hidden="true"
           />
 
@@ -127,14 +127,14 @@ export function SiteNavbar() {
             <>
               <Link
                 href="/sign-in"
-                className="hidden h-10 items-center rounded-[11px] px-[18px] text-[14px] font-semibold text-[#27352f] transition-colors hover:bg-black/[0.04] sm:inline-flex dark:text-[#cfdbd3] dark:hover:bg-white/[0.06] dark:hover:text-white"
+                className="hidden h-10 items-center rounded-[11px] px-[18px] text-[14px] font-semibold text-[#27352f] transition-colors hover:bg-black/[0.04] min-[861px]:inline-flex dark:text-[#cfdbd3] dark:hover:bg-white/[0.06] dark:hover:text-white"
               >
                 Sign in
               </Link>
 
               <Link
                 href="/sign-up"
-                className="hidden h-10 items-center rounded-[11px] bg-[#0e6b54] px-[18px] text-[14px] font-semibold text-white shadow-[0_4px_12px_rgba(11,107,71,0.2)] transition-colors hover:bg-[#0a5342] sm:inline-flex dark:bg-[#43d3ab] dark:text-[#06231b] dark:shadow-[0_0_18px_rgba(99,230,182,0.18)] dark:hover:bg-[#6ee7c3]"
+                className="hidden h-10 items-center rounded-[11px] bg-[#0e6b54] px-[18px] text-[14px] font-semibold text-white shadow-[0_4px_12px_rgba(11,107,71,0.2)] transition-colors hover:bg-[#0a5342] min-[861px]:inline-flex dark:bg-[#43d3ab] dark:text-[#06231b] dark:shadow-[0_0_18px_rgba(99,230,182,0.18)] dark:hover:bg-[#6ee7c3]"
               >
                 Sign up
               </Link>
@@ -148,7 +148,7 @@ export function SiteNavbar() {
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-menu"
-            className="flex size-10 items-center justify-center rounded-[11px] text-[#27352f] hover:bg-black/[0.04] md:hidden dark:text-white dark:hover:bg-white/[0.06]"
+            className="flex size-10 items-center justify-center rounded-[11px] text-[#27352f] hover:bg-black/[0.04] min-[861px]:hidden dark:text-white dark:hover:bg-white/[0.06]"
           >
             {mobileMenuOpen ? (
               <X className="size-5" aria-hidden="true" />
@@ -163,7 +163,7 @@ export function SiteNavbar() {
       {mobileMenuOpen && (
         <div
           id="mobile-menu"
-          className="border-t border-black/[0.07] bg-[#f6f4ee] px-4 pb-5 pt-2 sm:px-6 md:hidden dark:border-white/[0.08] dark:bg-[#080f0c]"
+          className="site-container border-t border-black/[0.07] bg-[#f6f4ee] pb-5 pt-2 min-[861px]:hidden dark:border-white/[0.08] dark:bg-[#080f0c]"
         >
           <nav className="flex flex-col">
             {NAV_LINKS.map((link) => {
@@ -255,7 +255,7 @@ export function SiteNavbar() {
               <Link
                 href="/sign-up"
                 onClick={() => setMobileMenuOpen(false)}
-                className="mx-3 mb-1 block rounded-[11px] bg-[#0e6b54] px-4 py-2.5 text-center text-[14px] font-semibold text-white sm:hidden dark:bg-[#43d3ab] dark:text-[#06231b]"
+                className="mx-3 mb-1 block rounded-[11px] bg-[#0e6b54] px-4 py-2.5 text-center text-[14px] font-semibold text-white dark:bg-[#43d3ab] dark:text-[#06231b]"
               >
                 Sign up
               </Link>

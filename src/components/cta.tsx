@@ -2,11 +2,11 @@ import { ArrowRight } from "lucide-react";
 
 export function CtaSection() {
   return (
-    <section className="py-10 lg:py-14">
-      <div className="mx-auto max-w-[1264px] px-6">
+    <section className="py-[clamp(38px,4.5vw,60px)]">
+      <div className="site-container">
         <div
           data-reveal
-          className="relative flex flex-col gap-6 overflow-hidden rounded-3xl border border-[#e5e1d6] bg-white px-7 py-9 sm:px-12 sm:py-11 lg:flex-row lg:items-center lg:justify-between dark:border-white/[0.08] dark:bg-[#101a16]"
+          className="relative flex flex-col gap-7 overflow-hidden rounded-[24px] border border-[#e5e1d6] bg-white p-[24px_18px] min-[561px]:p-[30px] min-[861px]:flex-row min-[861px]:items-center min-[861px]:justify-between min-[981px]:p-[52px] dark:border-white/[0.08] dark:bg-[#101a16]"
         >
           <div className="pointer-events-none absolute -left-10 -top-24 size-[340px] rounded-full bg-[radial-gradient(circle,rgba(14,107,84,0.12),transparent_62%)]" />
 
@@ -16,7 +16,7 @@ export function CtaSection() {
               Technicians welcome
             </p>
 
-            <h2 className="mt-2.5 max-w-[600px] font-heading text-[1.6rem] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#0f1a15] sm:text-[2rem] dark:text-white">
+            <h2 className="mt-2.5 max-w-[600px] font-heading text-[clamp(1.5rem,2.4vw,2rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#0f1a15] dark:text-white">
               Good at fixing things? Get paid on time.
             </h2>
 
@@ -27,7 +27,7 @@ export function CtaSection() {
             </p>
           </div>
 
-          <div className="relative flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex flex-col gap-3 min-[561px]:flex-row">
             <a
               href="/how-it-works"
               className="inline-flex h-[52px] items-center justify-center rounded-[13px] border border-[#d2ccbc] px-6 text-[15px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-white/15 dark:text-white dark:hover:bg-white/[0.06]"

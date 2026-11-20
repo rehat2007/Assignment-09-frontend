@@ -14,7 +14,7 @@ FixMate marketplace app (Next.js 16 App Router, React 19.3, TypeScript, Tailwind
 
 - `src/app/page.tsx` composes the homepage sections in this order: hero, category strip, latest services, how it works, trust band, popular categories, why FixMate, testimonials, CTA, then the footer outside `<main>`. `layout.tsx` adds the navbar, Google fonts (Plus Jakarta headings, Inter body), and a pre-paint theme script.
 - `/services` is a server component whose filters live entirely in the URL (`q`, `category`, `mode`, `sort`, `page`); category/mode chips and pagination are links, and the search/sort controls are a plain GET form. Keep it that way rather than adding client filter state.
-- `/services/[id]` is a basic detail page (unknown ids 404). `View details` links come from the shared card, so new listing links should use `/services/<id>`.
+- `/services/[id]` is the full service detail page: category hero, included items, service details, technician profile, review breakdown, and a booking card with role-aware CTA states. Unknown ids 404. `View details` links come from the shared card, so new listing links should use `/services/<id>`.
 - `/how-it-works` is the About/pipeline page: hero job tracker, principles band, five-stage pipeline, values, native `<details>` FAQ, and a closing CTA. Its content is local to `src/app/how-it-works/page.tsx`; the navbar and footer both link there.
 - `/sign-in` and `/sign-up` use `src/components/auth/auth-shell.tsx`; the navbar hides itself on those routes. Both forms call `authClient` and redirect to `/dashboard`; sign-in has `rememberMe`, and sign-up sends `accountType` (`customer` or `technician`).
 - Sign-up has an optional profile-photo picker. The file is uploaded to `/api/avatar` after the account is created (the route requires the new session), then its URL is saved with `authClient.updateUser({ image })`. Files land in `data/avatars` (gitignored); replace that route with S3/Cloudinary before deploying to serverless.
@@ -43,13 +43,14 @@ FixMate marketplace app (Next.js 16 App Router, React 19.3, TypeScript, Tailwind
 
 ## Data, cards, and animation hooks
 
-- `src/lib/services.ts` is the single source for the 15 live listings (`Service` type, `SERVICES`, `CATEGORIES`, `PAGE_SIZE`). Edit a listing there, not inside a page or card.
+- `src/lib/services.ts` is the single source for the 15 live listings (`Service` type, `SERVICES`, `CATEGORIES`, `PAGE_SIZE`). Edit a listing there, not inside a page or card. `src/lib/service-details.ts` adds the longer detail-page content (included items, reviews, technician profiles, warranty/availability) keyed by service id.
 - `src/lib/home-data.ts` derives `FEATURED_SERVICES` (six newest) and `CATEGORY_SUMMARY` (counts) from `SERVICES`; it also holds home-only copy (steps, stats, why-FixMate, testimonials).
 - `src/components/service-card.tsx` is shared by the homepage and `/services`. Change the card once there; it links each listing to `/services/<id>`.
 - `src/lib/service-styles.ts` supplies the category icon/tone maps used by the strip, cards, and category tiles.
-- `src/components/home-motion.tsx` is the only animation code: GSAP + ScrollTrigger with a `prefers-reduced-motion` guard. It targets `data-hero`, `data-hero-art`, `data-reveal`, `data-reveal-group`, and `data-float`. Add those attributes to new elements instead of writing per-section animation code.
+- `src/components/home-motion.tsx` is the only animation code: GSAP + ScrollTrigger with a `prefers-reduced-motion` guard. It targets `data-hero`, `data-hero-art`, `data-reveal`, `data-reveal-group`, `data-float` (7s staggered vertical float), and `data-scan` (3.4s scan line in the hero card). Add those attributes to new elements instead of writing per-section animation code.
 - `popular-strip.tsx` is an unused earlier draft; the live strip is `category-strip.tsx`.
-- Keep containers at `max-w-[1264px] px-6` (1216px of content, like the demo), navbar links pointing at `/services` / `#how-it-works`, and the navbar 74px tall (`scroll-mt-[74px]`).
+- Keep public-page containers on `.site-container` (1216px of content at desktop, 14/16/24px gutters at ≤560/561–760/761+ as in the demo). Dashboard pages keep `max-w-[1264px] px-6`. Navbar links point at `/services` / `#how-it-works`; the navbar is 74px tall on desktop and 64px at ≤760px (`scroll-mt-[74px]`).
+- Public home sections follow the demo rhythm: standard sections use `py-[clamp(52px,6.5vw,92px)]`, tight sections use `py-[clamp(38px,4.5vw,60px)]`, and responsive grids switch at the demo's 381/561/761/861/981/1101px breakpoints. `PopularCategories` renders the Why FixMate block inline rather than as a separate section.
 
 ## Conventions that differ from framework defaults
 

@@ -63,10 +63,10 @@ const SOCIAL_LINKS = [
 ];
 
 const HEADING_CLASSES =
-  "text-[12px] font-bold uppercase tracking-[0.1em] text-[#f1f5f2]";
+  "text-[12px] font-bold uppercase tracking-[0.13em] text-[#f1f5f2]";
 
 const LINK_CLASSES =
-  "text-[14px] leading-5 text-[#a9b8b0] transition-colors hover:text-white";
+  "text-[13.5px] leading-5 text-[#a9b8b0] transition-colors hover:text-white";
 
 function FooterColumn({
   title,
@@ -79,7 +79,7 @@ function FooterColumn({
     <div>
       <h2 className={HEADING_CLASSES}>{title}</h2>
 
-      <ul className="mt-5 space-y-3">
+      <ul className="mt-4 space-y-2.5">
         {links.map((link) => (
           <li key={link.label}>
             <Link href={link.href} className={LINK_CLASSES}>
@@ -98,18 +98,18 @@ export function SiteFooter() {
       {/* Soft green light in the corner, matching the reference footer. */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_-10%,rgba(76,180,133,0.14),transparent_48%)] dark:bg-[radial-gradient(circle_at_88%_-10%,rgba(52,190,134,0.13),transparent_45%)]" />
 
-      <div className="relative mx-auto max-w-[1264px] px-6 pb-4 pt-14">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-10 xl:grid-cols-[1.45fr_0.94fr_0.84fr_1.22fr] xl:gap-10">
-          <div className="col-span-2 xl:col-span-1">
+      <div className="site-container relative pt-[clamp(44px,5vw,68px)]">
+        <div className="grid grid-cols-1 gap-[26px] pb-11 min-[561px]:grid-cols-2 min-[761px]:grid-cols-3 min-[761px]:gap-8 min-[1101px]:grid-cols-[1.65fr_1fr_1fr_1.35fr] min-[1101px]:gap-11">
+          <div className="col-span-1 min-[561px]:col-span-2 min-[761px]:col-span-3 min-[1101px]:col-span-1">
             <Brand onDark />
 
-            <p className="mt-6 max-w-[290px] text-[14px] leading-[1.7] text-[#a9b8b0]">
+            <p className="mb-5 mt-4 max-w-[34ch] text-[13.5px] leading-[1.7] text-[#a9b8b0]">
               Verified technicians for phones, laptops, ACs, fridges and
               everything electrical. Every job tracked. Pay only when the repair
               is done.
             </p>
 
-            <div className="mt-4 flex items-center gap-3">
+            <div className="flex items-center gap-[9px]">
               {SOCIAL_LINKS.map((social) => (
                 <a
                   key={social.label}
@@ -119,7 +119,7 @@ export function SiteFooter() {
                 >
                   <svg
                     viewBox="0 0 24 24"
-                    className="size-3.5"
+                    className="size-4"
                     fill="currentColor"
                     aria-hidden="true"
                   >
@@ -133,10 +133,10 @@ export function SiteFooter() {
           <FooterColumn title="Quick links" links={QUICK_LINKS} />
           <FooterColumn title="Popular categories" links={CATEGORY_LINKS} />
 
-          <div className="col-span-2 xl:col-span-1">
+          <div>
             <h2 className={HEADING_CLASSES}>Talk to us</h2>
 
-            <ul className="mt-5 space-y-2.5">
+            <ul className="mt-4 space-y-2.5">
               {CONTACT_ROWS.map(({ icon: Icon, text, href }) => (
                 <li key={text} className="flex items-start gap-3">
                   <Icon
@@ -148,12 +148,12 @@ export function SiteFooter() {
                   {href ? (
                     <a
                       href={href}
-                      className="text-[14px] leading-[1.55] text-[#b7c3bc] transition-colors hover:text-[#43d3ab]"
+                      className="text-[13.5px] leading-[1.55] text-[#b7c3bc] transition-colors hover:text-[#43d3ab]"
                     >
                       {text}
                     </a>
                   ) : (
-                    <p className="text-[14px] leading-[1.55] text-[#b7c3bc]">
+                    <p className="text-[13.5px] leading-[1.55] text-[#b7c3bc]">
                       {text}
                     </p>
                   )}
@@ -162,7 +162,7 @@ export function SiteFooter() {
             </ul>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-white/[0.09] bg-white/[0.03] px-2.5 py-1.5 text-[10.5px] font-medium text-[#c4cfc8]">
+              <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-white/[0.09] bg-white/[0.03] px-2.5 py-[5px] text-[11.5px] font-medium text-[#c4cfc8]">
                 <ShieldCheck
                   className="size-3 text-[#43d3ab]"
                   strokeWidth={2}
@@ -171,7 +171,7 @@ export function SiteFooter() {
                 Verified pros
               </span>
 
-              <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-white/[0.09] bg-white/[0.03] px-2.5 py-1.5 text-[10.5px] font-medium text-[#c4cfc8]">
+              <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-white/[0.09] bg-white/[0.03] px-2.5 py-[5px] text-[11.5px] font-medium text-[#c4cfc8]">
                 <Lock
                   className="size-3 text-[#43d3ab]"
                   strokeWidth={2}
@@ -183,7 +183,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-white/[0.09] pt-4 text-[11.5px] text-[#78857e] sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-t border-white/[0.09] py-[18px] pb-[22px] text-[12.5px] text-[#78857e] sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 FixMate Technologies Ltd. All rights reserved.</p>
 
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
