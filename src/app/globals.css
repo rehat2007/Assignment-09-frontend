@@ -121,10 +121,34 @@
   * {
     @apply border-border outline-ring/50;
     }
+
   body {
     @apply bg-background text-foreground;
     }
+
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
     }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  :where(a, button, summary, input, select, textarea):focus-visible {
+    outline: 2px solid #0e6b54;
+    outline-offset: 2px;
+    }
+
+  .dark :where(a, button, summary, input, select, textarea):focus-visible {
+    outline-color: #43d3ab;
+    }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
 }

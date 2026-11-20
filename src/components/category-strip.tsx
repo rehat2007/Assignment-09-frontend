@@ -6,14 +6,14 @@ import { CATEGORY_ICONS } from "@/lib/service-styles";
 export function CategoryStrip() {
   return (
     <div className="border-y border-black/[0.08] bg-white/55 dark:border-white/[0.07] dark:bg-white/[0.02]">
-      <div className="mx-auto flex max-w-[1264px] flex-wrap items-center justify-between gap-3 px-6 py-3.5">
+      <div className="mx-auto flex max-w-[1264px] flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
         <span className="text-[11px] font-bold uppercase tracking-[0.13em] text-[#87948d]">
           Popular right now
         </span>
 
         <nav
           aria-label="Popular categories"
-          className="flex flex-1 flex-wrap items-center justify-center gap-1"
+          className="order-3 -mx-4 flex w-full items-center gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:order-none sm:mx-0 sm:w-auto sm:flex-1 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0"
         >
           {CATEGORY_SUMMARY.map(({ name }) => {
             const Icon = CATEGORY_ICONS[name];
@@ -22,7 +22,7 @@ export function CategoryStrip() {
               <Link
                 key={name}
                 href={`/services?category=${encodeURIComponent(name)}`}
-                className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12.5px] text-[#5f6f68] transition-colors hover:bg-white hover:text-[#0f1a15] hover:shadow-sm dark:text-[#9dab9f] dark:hover:bg-white/[0.05] dark:hover:text-white"
+                className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[12.5px] text-[#5f6f68] transition-colors hover:bg-white hover:text-[#0f1a15] hover:shadow-sm dark:text-[#9dab9f] dark:hover:bg-white/[0.05] dark:hover:text-white"
               >
                 <Icon className="size-[15px] text-[#0e6b54] dark:text-[#43d3ab]" />
                 {name}
@@ -33,7 +33,7 @@ export function CategoryStrip() {
 
         <Link
           href="/services"
-          className="flex items-center gap-2 text-[13px] font-semibold text-[#0e6b54] transition-colors hover:text-[#0a5342] dark:text-[#43d3ab]"
+          className="ml-auto flex shrink-0 items-center gap-2 text-[13px] font-semibold text-[#0e6b54] transition-colors hover:text-[#0a5342] sm:ml-0 dark:text-[#43d3ab]"
         >
           All services
           <ArrowRight className="size-4" />

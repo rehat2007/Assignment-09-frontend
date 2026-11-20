@@ -40,7 +40,7 @@ export function HeroSection() {
             </span>
           </div>
 
-          <h1 className="mt-5 max-w-[650px] font-heading text-[2.5rem] font-extrabold leading-[1.02] tracking-[-0.045em] text-[#0f1a15] min-[380px]:text-[2.8rem] sm:text-[3.4rem] lg:text-[3.9rem] dark:text-white">
+          <h1 className="mt-5 max-w-[650px] font-heading text-[2.1rem] font-extrabold leading-[1.03] tracking-[-0.045em] text-[#0f1a15] min-[360px]:text-[2.4rem] min-[380px]:text-[2.7rem] sm:text-[3.4rem] lg:text-[3.9rem] dark:text-white">
             Broken device?
             <br />
             Get it{" "}
@@ -81,7 +81,7 @@ export function HeroSection() {
                 type="search"
                 name="q"
                 aria-label="What needs fixing?"
-                placeholder="What needs fixing? e.g. iPhone screen"
+                placeholder="What needs fixing?"
                 className="h-10 w-full min-w-0 bg-transparent text-sm text-[#1b2922] outline-none placeholder:text-[#7e8b84] dark:text-white dark:placeholder:text-[#7f9a8c]"
               />
             </div>

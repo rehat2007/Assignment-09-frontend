@@ -84,7 +84,7 @@ export default async function ServiceDetailPage({ params }: Props) {
           <div className="grid gap-8 pb-16 pt-2 lg:grid-cols-[minmax(0,1.62fr)_minmax(0,0.9fr)] lg:items-start">
             <div data-reveal>
               <div
-                className={`relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-[20px] border border-[#e5e1d6] ${tone.media} dark:border-white/[0.08]`}
+                className={`relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-[20px] border border-[#e5e1d6] ${tone.media} sm:aspect-[16/9] dark:border-white/[0.08]`}
               >
                 <div className={`pointer-events-none absolute inset-0 ${tone.glow}`} />
 
@@ -99,10 +99,10 @@ export default async function ServiceDetailPage({ params }: Props) {
                 </span>
 
                 <div
-                  className={`relative flex size-[140px] items-center justify-center rounded-[36px] border sm:size-[160px] ${tone.tile}`}
+                  className={`relative flex size-[120px] items-center justify-center rounded-[32px] border sm:size-[160px] sm:rounded-[36px] ${tone.tile}`}
                 >
                   <Icon
-                    className={`size-[64px] sm:size-[72px] ${tone.icon}`}
+                    className={`size-[56px] sm:size-[72px] ${tone.icon}`}
                     strokeWidth={1.6}
                   />
                 </div>

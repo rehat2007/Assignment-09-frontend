@@ -173,7 +173,7 @@ export default async function ServicesPage({ searchParams }: Props) {
               </p>
             </div>
 
-            <div className="flex shrink-0 gap-7">
+            <div className="flex w-full justify-between gap-6 border-t border-[#e5e1d6] pt-5 sm:w-auto sm:justify-start sm:border-0 sm:pt-0 dark:border-white/[0.08]">
               <Stat value={SERVICES.length} label="Live services" />
               <Stat value={techCount} label="Verified technicians" />
               <Stat value={CATEGORIES.length} label="Categories" />
@@ -198,18 +198,18 @@ export default async function ServicesPage({ searchParams }: Props) {
                   type="search"
                   name="q"
                   defaultValue={q}
-                  placeholder="Search by service, category, technician or area…"
+                  placeholder="Search services or areas…"
                   aria-label="Search services"
                   className="h-11 w-full rounded-[11px] border border-[#e5e1d6] bg-white py-0 pl-[39px] pr-3.5 text-[14px] text-[#0f1a15] outline-none transition placeholder:text-[#87948d] focus:border-[#0e6b54] focus:ring-[3px] focus:ring-[#0e6b54]/10 dark:border-[#24332c] dark:bg-[#101a16] dark:text-white dark:focus:border-[#43d3ab]"
                 />
               </div>
 
-              <div className="relative">
+              <div className="relative min-w-[150px] flex-1 sm:flex-none">
                 <select
                   name="sort"
                   defaultValue={sort}
                   aria-label="Sort services"
-                  className="h-11 w-[175px] cursor-pointer appearance-none rounded-[11px] border border-[#e5e1d6] bg-white py-0 pl-[13px] pr-[38px] text-[13.5px] font-medium text-[#27352f] outline-none focus:border-[#0e6b54] dark:border-[#24332c] dark:bg-[#101a16] dark:text-[#cfdbd3] dark:focus:border-[#43d3ab]"
+                  className="h-11 w-full cursor-pointer appearance-none rounded-[11px] border border-[#e5e1d6] bg-white py-0 pl-[13px] pr-[38px] text-[13.5px] font-medium text-[#27352f] outline-none focus:border-[#0e6b54] sm:w-[175px] dark:border-[#24332c] dark:bg-[#101a16] dark:text-[#cfdbd3] dark:focus:border-[#43d3ab]"
                 >
                   {SORT_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -222,14 +222,14 @@ export default async function ServicesPage({ searchParams }: Props) {
 
               <button
                 type="submit"
-                className="flex h-11 items-center justify-center gap-2 rounded-[11px] bg-[#0e6b54] px-[18px] text-[14px] font-semibold text-white transition hover:bg-[#0a5342] dark:bg-[#43d3ab] dark:text-[#06231b] dark:hover:bg-[#6ee7c3]"
+                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[11px] bg-[#0e6b54] px-[18px] text-[14px] font-semibold text-white transition hover:bg-[#0a5342] sm:flex-none dark:bg-[#43d3ab] dark:text-[#06231b] dark:hover:bg-[#6ee7c3]"
               >
                 <Search className="size-4" />
                 Search
               </button>
             </form>
 
-            <div className="flex flex-wrap items-center gap-[7px]">
+            <div className="-mx-6 flex items-center gap-[7px] overflow-x-auto px-6 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
               <Chip
                 href={hrefFor({ category: "", page: 1 })}
                 active={!category}
@@ -469,8 +469,8 @@ function Chip({
       href={href}
       className={
         active
-          ? "flex h-[34px] items-center gap-1.5 rounded-[9px] border border-transparent bg-[#0f1a15] px-[13px] text-[12.5px] font-semibold text-white dark:bg-white dark:text-[#0f1a15]"
-          : "flex h-[34px] items-center gap-1.5 rounded-[9px] border border-[#e5e1d6] bg-white px-[13px] text-[12.5px] font-medium text-[#5f6f68] transition hover:border-[#d2ccbc] hover:text-[#0f1a15] dark:border-[#24332c] dark:bg-[#101a16] dark:text-[#9dab9f] dark:hover:border-white/20 dark:hover:text-white"
+          ? "flex h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-transparent bg-[#0f1a15] px-[13px] text-[12.5px] font-semibold text-white dark:bg-white dark:text-[#0f1a15]"
+          : "flex h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-[#e5e1d6] bg-white px-[13px] text-[12.5px] font-medium text-[#5f6f68] transition hover:border-[#d2ccbc] hover:text-[#0f1a15] dark:border-[#24332c] dark:bg-[#101a16] dark:text-[#9dab9f] dark:hover:border-white/20 dark:hover:text-white"
       }
     >
       {icon}

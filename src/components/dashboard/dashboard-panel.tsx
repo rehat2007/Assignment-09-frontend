@@ -65,7 +65,7 @@ export function DashboardPanel({
             </p>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-[#e5e1d6] bg-white p-3 pr-5 dark:border-white/[0.08] dark:bg-[#101a16]">
+          <div className="flex w-full items-center gap-3 rounded-2xl border border-[#e5e1d6] bg-white p-3 pr-5 sm:w-auto dark:border-white/[0.08] dark:bg-[#101a16]">
             <span
               className="size-11 shrink-0 rounded-full bg-[#c9f5db] bg-cover bg-center text-[13px] font-bold text-[#0b3b26]"
               style={user.image ? { backgroundImage: `url(${user.image})` } : undefined}
@@ -76,15 +76,15 @@ export function DashboardPanel({
                 </span>
               )}
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-semibold text-[#0f1a15] dark:text-white">
                 {user.name}
               </p>
-              <p className="mt-0.5 text-[11px] text-[#5f6f68] dark:text-[#9dab9f]">
+              <p className="mt-0.5 truncate text-[11px] text-[#5f6f68] dark:text-[#9dab9f]">
                 {user.email}
               </p>
             </div>
-            <span className="flex h-6 items-center gap-1 rounded-[6px] bg-[#e4f2ec] px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-[#0e6b54] dark:bg-[#112c25] dark:text-[#43d3ab]">
+            <span className="flex h-6 shrink-0 items-center gap-1 rounded-[6px] bg-[#e4f2ec] px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-[#0e6b54] dark:bg-[#112c25] dark:text-[#43d3ab]">
               <ShieldCheck className="size-3" />
               {ROLE_LABEL[role]}
             </span>

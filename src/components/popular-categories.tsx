@@ -42,7 +42,7 @@ export function PopularCategories() {
 
         <div
           data-reveal-group
-          className="mt-8 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4"
+          className="mt-8 grid grid-cols-2 gap-3 sm:gap-3.5 lg:grid-cols-4"
         >
           {CATEGORY_SUMMARY.map(({ name, count }) => {
             const Icon = CATEGORY_ICONS[name];
@@ -51,7 +51,7 @@ export function PopularCategories() {
               <Link
                 key={name}
                 href={`/services?category=${encodeURIComponent(name)}`}
-                className="group relative flex min-h-[156px] flex-col overflow-hidden rounded-[15px] border border-[#e5e1d6] bg-white p-[18px] transition duration-200 hover:-translate-y-[3px] hover:border-[#d2ccbc] hover:shadow-[0_14px_30px_-18px_rgba(15,26,21,0.28)] dark:border-white/[0.08] dark:bg-[#101a16]"
+                className="group relative flex min-h-[148px] flex-col overflow-hidden rounded-[15px] border border-[#e5e1d6] bg-white p-4 transition duration-200 hover:-translate-y-[3px] hover:border-[#d2ccbc] hover:shadow-[0_14px_30px_-18px_rgba(15,26,21,0.28)] sm:min-h-[156px] sm:p-[18px] dark:border-white/[0.08] dark:bg-[#101a16]"
               >
                 <span
                   className={`flex size-11 items-center justify-center rounded-xl border ${ICON_TILES[name]}`}
@@ -73,7 +73,7 @@ export function PopularCategories() {
 
           <Link
             href="/services"
-            className="group flex min-h-[156px] flex-col items-center justify-center gap-3 rounded-[15px] bg-[#0e6b54] p-[18px] text-center transition hover:-translate-y-[3px] hover:shadow-[0_16px_36px_-18px_rgba(14,107,84,0.7)] dark:bg-[#43d3ab]"
+            className="group flex min-h-[148px] flex-col items-center justify-center gap-3 rounded-[15px] bg-[#0e6b54] p-4 text-center transition hover:-translate-y-[3px] hover:shadow-[0_16px_36px_-18px_rgba(14,107,84,0.7)] sm:min-h-[156px] sm:p-[18px] dark:bg-[#43d3ab]"
           >
             <span className="flex size-11 items-center justify-center rounded-full bg-white/15 text-white dark:bg-[#06231b]/10 dark:text-[#06231b]">
               <ArrowRight className="size-4" />

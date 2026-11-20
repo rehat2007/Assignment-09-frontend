@@ -23,8 +23,8 @@ const STATS = [
 
 export function AuthShell({ children }: { children: ReactNode }) {
   return (
-    <div className="grid min-h-screen overflow-x-hidden bg-[#f6f4ee] lg:grid-cols-2 dark:bg-[#050c08]">
-      <aside className="relative hidden min-h-screen flex-col overflow-hidden border-r border-black/[0.06] bg-[#eef3ed] px-14 py-10 lg:flex dark:border-white/[0.06] dark:bg-[#07130e]">
+    <div className="grid min-h-dvh overflow-x-hidden bg-[#f6f4ee] lg:grid-cols-2 dark:bg-[#050c08]">
+      <aside className="relative hidden min-h-dvh flex-col overflow-hidden border-r border-black/[0.06] bg-[#eef3ed] px-10 py-10 lg:flex xl:px-14 dark:border-white/[0.06] dark:bg-[#07130e]">
         <div className="pointer-events-none absolute -left-40 -top-40 size-[720px] rounded-full bg-[radial-gradient(circle,rgba(67,211,171,0.2),transparent_64%)]" />
         <div className="pointer-events-none absolute -bottom-72 -right-40 size-[700px] rounded-full bg-[radial-gradient(circle,rgba(67,211,171,0.1),transparent_66%)]" />
 
@@ -38,7 +38,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
             Repair, without the runaround
           </p>
 
-          <h1 className="mt-5 max-w-[16ch] font-heading text-[2.4rem] font-extrabold leading-[1.04] tracking-[-0.04em] text-[#0f1a15] dark:text-white">
+          <h1 className="mt-5 max-w-[16ch] font-heading text-[2.15rem] font-extrabold leading-[1.04] tracking-[-0.04em] text-[#0f1a15] xl:text-[2.4rem] dark:text-white">
             The person fixing your device is accountable for it.
           </h1>
 
@@ -81,8 +81,8 @@ export function AuthShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <section className="flex min-h-screen min-w-0 flex-1 flex-col bg-white dark:bg-[#050c08]">
-        <header className="flex items-center justify-between gap-4 px-6 pb-4 pt-6 sm:px-8 lg:px-7">
+      <section className="flex min-h-dvh min-w-0 flex-1 flex-col bg-white dark:bg-[#050c08]">
+        <header className="flex items-center justify-between gap-4 px-4 pb-4 pt-6 sm:px-8 lg:px-7">
           <Brand />
 
           <div className="flex items-center gap-2">
@@ -98,11 +98,11 @@ export function AuthShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <div className="flex min-w-0 flex-1 items-start justify-center px-6 py-8 sm:px-8 lg:items-center lg:py-4">
+        <div className="flex min-w-0 flex-1 items-start justify-center px-4 py-8 sm:px-8 lg:items-center lg:py-4">
           <div className="w-full min-w-0 max-w-[428px]">{children}</div>
         </div>
 
-        <footer className="px-6 pb-6 text-right text-[11.5px] text-[#87948d] sm:px-8 lg:px-7">
+        <footer className="px-4 pb-6 text-right text-[11.5px] text-[#87948d] sm:px-8 lg:px-7">
           © 2026 FixMate ·{" "}
           <Link href="/privacy" className="hover:text-[#0f1a15] dark:hover:text-white">
             Privacy

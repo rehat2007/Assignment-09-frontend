@@ -56,7 +56,7 @@ export function SiteNavbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-black/[0.07] bg-[#f6f4ee]/95 backdrop-blur-md dark:border-white/[0.08] dark:bg-[#080f0c]/95">
-      <div className="mx-auto flex h-[74px] max-w-[1264px] items-center gap-7 px-6">
+      <div className="mx-auto flex h-[74px] max-w-[1264px] items-center gap-4 px-4 sm:gap-7 sm:px-6">
         <Brand />
 
         {/* Desktop navigation */}
@@ -180,7 +180,7 @@ export function SiteNavbar() {
       {mobileMenuOpen && (
         <div
           id="mobile-menu"
-          className="border-t border-black/[0.07] bg-[#f6f4ee] px-6 pb-5 pt-2 md:hidden dark:border-white/[0.08] dark:bg-[#080f0c]"
+          className="border-t border-black/[0.07] bg-[#f6f4ee] px-4 pb-5 pt-2 sm:px-6 md:hidden dark:border-white/[0.08] dark:bg-[#080f0c]"
         >
           <nav className="flex flex-col">
             {NAV_LINKS.map((link) => {

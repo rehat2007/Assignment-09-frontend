@@ -301,7 +301,7 @@ export default function HowItWorksPage() {
 
           <ol
             data-reveal-group
-            className="mt-10 grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 xl:grid-cols-5"
+            className="mt-10 grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
           >
             {STEPS.map((step, index) => {
               const Icon = step.icon;
