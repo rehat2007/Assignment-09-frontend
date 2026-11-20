@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Clock, Plus, RotateCcw, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Clock,
+  Plus,
+  RotateCcw,
+  XCircle,
+} from "lucide-react";
 import { cn } from "cn";
 import { BookingTimeline, StatusBadge } from "@/components/customer/booking-status";
 import { CategoryTile } from "@/components/customer/category-tile";
@@ -24,6 +32,8 @@ const FILTERS: Array<{ key: BookingStatus | "all"; label: string }> = [
   { key: "rejected", label: "Rejected" },
 ];
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
 export function CustomerBookings({
   initialBookings,
 }: {
@@ -32,6 +42,9 @@ export function CustomerBookings({
   const [bookings, setBookings] = useState(initialBookings);
   const [filter, setFilter] = useState<BookingStatus | "all">("all");
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const router = useRouter();
 
   const counts = useMemo(
     () =>
@@ -54,26 +67,56 @@ export function CustomerBookings({
     [bookings, filter],
   );
 
-  function cancelBooking(id: string) {
-    setBookings((current) =>
-      current.map((booking) =>
-        booking.id === id
-          ? { ...booking, status: "cancelled" as const }
-          : booking,
-      ),
-    );
-    setNotice("Request cancelled in this preview. Connect the bookings API to persist it.");
+  async function cancelBooking(id: string) {
+    if (pendingId) return;
+
+    setPendingId(id);
+    setNotice("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/bookings/${encodeURIComponent(id)}/cancel`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      const body = (await response.json().catch(() => null)) as
+        | {
+            data?: CustomerBooking;
+            error?: { message?: string };
+          }
+        | null;
+
+      if (!response.ok || !body?.data) {
+        throw new Error(
+          body?.error?.message ?? "Could not cancel this booking.",
+        );
+      }
+
+      const updated = body.data;
+      setBookings((current) =>
+        current.map((booking) => (booking.id === id ? updated : booking)),
+      );
+      setNotice("Request cancelled. The technician has been notified.");
+      router.refresh();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not cancel this booking.",
+      );
+    } finally {
+      setPendingId(null);
+    }
   }
 
-  function payBooking(id: string) {
-    setBookings((current) =>
-      current.map((booking) =>
-        booking.id === id
-          ? { ...booking, paymentStatus: "paid" as const }
-          : booking,
-      ),
+  function payBooking() {
+    setError("");
+    setNotice(
+      "Online payment is not connected yet. Stripe checkout is coming soon.",
     );
-    setNotice("Payment marked as paid in this preview. Stripe is not connected yet.");
   }
 
   return (
@@ -96,6 +139,16 @@ export function CustomerBookings({
           New request
         </Link>
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          className="mt-4 flex items-start gap-2 rounded-[9px] border border-[#b42318]/20 bg-[#fcecea] px-3 py-2.5 text-[11.5px] text-[#b42318] dark:border-[#ff8f82]/20 dark:bg-[#2e1613] dark:text-[#ff8f82]"
+        >
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          {error}
+        </p>
+      )}
 
       {notice && (
         <p
@@ -162,7 +215,8 @@ export function CustomerBookings({
                     {booking.title}
                   </h2>
                   <p className="mt-0.5 truncate text-[10.5px] text-[#87948d]">
-                    #{booking.id.toUpperCase()} · {booking.technician}
+                    #{booking.bookingNumber ?? booking.id.toUpperCase()} ·{" "}
+                    {booking.technician}
                   </p>
                 </div>
               </div>
@@ -185,7 +239,7 @@ export function CustomerBookings({
                 <p className="mt-1 text-[11.5px] font-semibold text-[#0f1a15] dark:text-white">
                   {money(
                     booking.paymentStatus === "paid"
-                      ? booking.finalAmount
+                      ? (booking.finalAmount ?? booking.basePrice)
                       : booking.basePrice,
                   )}
                 </p>
@@ -201,15 +255,16 @@ export function CustomerBookings({
                   <button
                     type="button"
                     onClick={() => cancelBooking(booking.id)}
-                    className="inline-flex h-8 items-center rounded-[7px] border border-[#d2ccbc] px-3 text-[11px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-white/15 dark:text-white dark:hover:bg-white/[0.04]"
+                    disabled={pendingId !== null}
+                    className="inline-flex h-8 items-center rounded-[7px] border border-[#d2ccbc] px-3 text-[11px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:text-white dark:hover:bg-white/[0.04]"
                   >
-                    Cancel
+                    {pendingId === booking.id ? "Cancelling…" : "Cancel"}
                   </button>
                 )}
 
                 {["accepted", "in-progress"].includes(booking.status) && (
                   <Link
-                    href={`/services/${booking.serviceId}`}
+                    href={`/services/${booking.serviceSlug ?? booking.serviceId}`}
                     className="inline-flex h-8 items-center gap-1 rounded-[7px] border border-[#d2ccbc] px-3 text-[11px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-white/15 dark:text-white dark:hover:bg-white/[0.04]"
                   >
                     View <ArrowRight className="size-3" />
@@ -220,7 +275,7 @@ export function CustomerBookings({
                   booking.paymentStatus === "unpaid" && (
                     <button
                       type="button"
-                      onClick={() => payBooking(booking.id)}
+                      onClick={() => payBooking()}
                       className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#0e6b54]/10 px-3 text-[11px] font-semibold text-[#0e6b54] transition hover:bg-[#0e6b54]/15 dark:bg-[#63e6b6]/10 dark:text-[#63e6b6]"
                     >
                       Pay now
@@ -262,7 +317,7 @@ export function CustomerBookings({
                   {formatDate(booking.preferredDate)} ·{" "}
                   {money(
                     booking.paymentStatus === "paid"
-                      ? booking.finalAmount
+                      ? (booking.finalAmount ?? booking.basePrice)
                       : booking.basePrice,
                   )}
                 </span>
@@ -274,11 +329,9 @@ export function CustomerBookings({
         {visible.length === 0 && (
           <div className="rounded-2xl border border-dashed border-[#d2ccbc] bg-[#fbfaf6] p-10 text-center dark:border-white/15 dark:bg-white/[0.02]">
             <p className="font-heading text-[15px] font-bold text-[#0f1a15] dark:text-white">
-              No{" "}
               {filter === "all"
-                ? ""
-                : BOOKING_STATUS_LABEL[filter as BookingStatus]}{" "}
-              bookings
+                ? "No bookings"
+                : `No ${BOOKING_STATUS_LABEL[filter as BookingStatus]} bookings`}
             </p>
             <p className="mt-2 text-[12px] text-[#5f6f68] dark:text-[#9dab9f]">
               Switch the filter or send a new request.

@@ -159,6 +159,7 @@ fix_mate_backend/
       me.ts
       catalog.ts
       bookings.ts
+      customer.ts
       technician.ts
       admin.ts
       payments.ts
@@ -631,13 +632,13 @@ The review distribution bars remain a UI placeholder until Phase 8 replaces them
 
 ### Endpoints
 
-- [ ] `POST /api/v1/bookings`
-- [ ] `GET /api/v1/bookings`
-- [ ] `GET /api/v1/bookings/:id`
-- [ ] `POST /api/v1/bookings/:id/cancel`
-- [ ] `GET /api/v1/customer/overview`
-- [ ] `GET /api/v1/customer/payments`
-- [ ] `GET /api/v1/payments/:id`
+- [x] `POST /api/v1/bookings`
+- [x] `GET /api/v1/bookings`
+- [x] `GET /api/v1/bookings/:id`
+- [x] `POST /api/v1/bookings/:id/cancel`
+- [x] `GET /api/v1/customer/overview`
+- [x] `GET /api/v1/customer/payments`
+- [x] `GET /api/v1/payments/:id`
 
 ### Booking creation body
 
@@ -662,19 +663,21 @@ Server must:
 
 ### Frontend changes
 
-- [ ] Add the missing booking form/modal on `/services/[id]`.
-- [ ] Replace `CustomerBookings` local cancel state with the cancel endpoint.
-- [ ] Replace `CustomerPayments` props with API data.
-- [ ] Replace customer overview static imports with the overview endpoint.
-- [ ] Add loading, empty, and error states.
+- [x] Add the missing booking form/modal on `/services/[id]`.
+- [x] Replace `CustomerBookings` local cancel state with the cancel endpoint.
+- [x] Replace `CustomerPayments` props with API data.
+- [x] Replace customer overview static imports with the overview endpoint.
+- [x] Add loading, empty, and error states.
 
 ### Acceptance checks
 
-- [ ] New request appears for the correct customer, technician, and admin.
-- [ ] Cancel only works while `requested`.
-- [ ] Refresh preserves the booking.
-- [ ] No price is accepted from the browser.
-- [ ] Another customer cannot read the booking.
+- [x] New request appears for the correct customer, technician, and admin. *(Verified in MongoDB and APIs; technician/admin dashboards switch to live data in Phases 5/6.)*
+- [x] Cancel only works while `requested`.
+- [x] Refresh preserves the booking.
+- [x] No price is accepted from the browser.
+- [x] Another customer cannot read the booking.
+
+The customer “Pay now” button no longer writes `paymentStatus` locally; it shows a notice until Stripe checkout is added in Phase 7.
 
 ---
 

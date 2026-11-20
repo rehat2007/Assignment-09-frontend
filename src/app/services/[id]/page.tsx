@@ -19,10 +19,10 @@ import {
   ShieldCheck,
   Star,
   UserRound,
-  Wrench,
 } from "lucide-react";
 import { HomeMotion } from "@/components/home-motion";
 import { SiteFooter } from "@/components/site-footer";
+import { BookingRequestDialog } from "@/components/customer/booking-request-dialog";
 import { getAppRole, getSession } from "@/lib/authz";
 import { getServiceBySlug, getServiceReviews } from "@/lib/catalog";
 import { formatDate } from "@/lib/customer-data";
@@ -442,13 +442,12 @@ export default async function ServiceDetailPage({ params }: Props) {
                   </>
                 ) : (
                   <>
-                    <Link
-                      href="/dashboard/customer/bookings"
-                      className="flex h-12 w-full items-center justify-center gap-2 rounded-[13px] bg-[#0e6b54] px-5 text-[14px] font-semibold text-white transition hover:bg-[#0a5342] dark:bg-[#43d3ab] dark:text-[#06231b] dark:hover:bg-[#6ee7c3]"
-                    >
-                      <Wrench className="size-4" />
-                      Request this repair
-                    </Link>
+                    <BookingRequestDialog
+                      serviceSlug={service.id}
+                      serviceTitle={service.title}
+                      defaultPhone={user.phone ?? ""}
+                      defaultArea={user.area ?? ""}
+                    />
                     <p className="flex items-center justify-center gap-1.5 text-center text-[11px] leading-[1.5] text-[#87948d]">
                       <ShieldCheck className="size-3.5 shrink-0" />
                       No payment now · cancel while it is still “requested”

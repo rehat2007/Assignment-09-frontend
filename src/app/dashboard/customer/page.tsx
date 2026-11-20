@@ -14,19 +14,19 @@ import {
 } from "lucide-react";
 import { BookingTimeline, StatusBadge } from "@/components/customer/booking-status";
 import { CategoryTile } from "@/components/customer/category-tile";
+import { CustomerPageError } from "@/components/customer/customer-page-error";
 import { requireRole } from "@/lib/authz";
+import { getServices, type ServiceSummary } from "@/lib/catalog";
+import {
+  getCustomerOverview,
+  type CustomerOverview,
+} from "@/lib/customer-api";
 import {
   BOOKING_STATUS_COLOR,
   BOOKING_STATUS_LABEL,
-  CUSTOMER_BOOKINGS,
-  CUSTOMER_PAYMENTS,
   formatDate,
-  getBookingCounts,
-  getCustomerStats,
-  getSpendSeries,
   money,
 } from "@/lib/customer-data";
-import { SERVICES } from "@/lib/services";
 
 const STATUS_ORDER = [
   "requested",
@@ -38,20 +38,37 @@ const STATUS_ORDER = [
 ] as const;
 
 export default async function CustomerOverviewPage() {
-  const { session } = await requireRole(["customer", "admin"]);
+  const { session } = await requireRole(["customer"]);
   const user = session.user;
   const firstName = user.name.split(" ")[0];
-  const stats = getCustomerStats();
-  const counts = getBookingCounts();
-  const spend = getSpendSeries();
+
+  let overview: CustomerOverview;
+  let recommended: ServiceSummary | null = null;
+
+  try {
+    const [overviewData, recommendedData] = await Promise.all([
+      getCustomerOverview(),
+      getServices({ category: "Smartphone", sort: "rating", pageSize: 1 }),
+    ]);
+
+    overview = overviewData;
+    recommended = recommendedData.data[0] ?? null;
+  } catch {
+    return (
+      <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
+        <div className="mx-auto max-w-[1264px] px-6 py-8">
+          <CustomerPageError
+            title="We could not load your dashboard"
+            description="Your bookings and payment summary could not be loaded. Please try again."
+            retryHref="/dashboard/customer"
+          />
+        </div>
+      </main>
+    );
+  }
+
+  const { stats, counts, active, recent, spend } = overview;
   const maxSpend = Math.max(...spend.map((entry) => entry.value), 1);
-  const active = CUSTOMER_BOOKINGS.find(
-    (booking) => booking.status === "in-progress",
-  );
-  const recent = CUSTOMER_BOOKINGS.slice(0, 4);
-  const recommended = SERVICES.find(
-    (service) => service.category === "Smartphone",
-  );
 
   const segments = STATUS_ORDER.map((status) => ({
     status,
@@ -59,22 +76,25 @@ export default async function CustomerOverviewPage() {
     color: BOOKING_STATUS_COLOR[status],
   }));
 
-  const gradient = segments
-    .filter((segment) => segment.count > 0)
-    .reduce<{ stops: string[]; cursor: number }>(
-      (result, segment) => {
-        const end = result.cursor + (segment.count / stats.total) * 100;
-        return {
-          cursor: end,
-          stops: [
-            ...result.stops,
-            `${segment.color} ${result.cursor}% ${end}%`,
-          ],
-        };
-      },
-      { stops: [], cursor: 0 },
-    )
-    .stops.join(", ");
+  const gradient =
+    stats.total > 0
+      ? segments
+          .filter((segment) => segment.count > 0)
+          .reduce<{ stops: string[]; cursor: number }>(
+            (result, segment) => {
+              const end = result.cursor + (segment.count / stats.total) * 100;
+              return {
+                cursor: end,
+                stops: [
+                  ...result.stops,
+                  `${segment.color} ${result.cursor}% ${end}%`,
+                ],
+              };
+            },
+            { stops: [], cursor: 0 },
+          )
+          .stops.join(", ")
+      : "#e5e1d6 0% 100%";
 
   return (
     <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
@@ -111,7 +131,7 @@ export default async function CustomerOverviewPage() {
           <StatCard
             label="Total requests"
             value={String(stats.total)}
-            note="+4 vs last month"
+            note="All time"
             icon={<ClipboardList className="size-4" />}
             tone="mint"
           />
@@ -132,7 +152,7 @@ export default async function CustomerOverviewPage() {
           <StatCard
             label="Total spent"
             value={money(stats.spent)}
-            note={`${CUSTOMER_PAYMENTS.length} secure payments`}
+            note={`${stats.paymentCount} secure payments`}
             icon={<CreditCard className="size-4" />}
             tone="mint"
           />
@@ -188,11 +208,12 @@ export default async function CustomerOverviewPage() {
                   <div className="mt-4 flex flex-col gap-3 border-t border-[#e5e1d6] pt-3 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.08]">
                     <p className="flex items-center gap-1.5 text-[11px] text-[#5f6f68] dark:text-[#9dab9f]">
                       <Clock className="size-3.5" />
-                      {active.technician} is on the job. Payment opens after
-                      completion.
+                      {active.status === "requested"
+                        ? `${active.technician} will confirm your request shortly.`
+                        : `${active.technician} is on the job. Payment opens after completion.`}
                     </p>
                     <Link
-                      href={`/services/${active.serviceId}`}
+                      href={`/services/${active.serviceSlug ?? active.serviceId}`}
                       className="inline-flex h-9 items-center justify-center rounded-[7px] bg-[#0e6b54]/10 px-3 text-[11.5px] font-semibold text-[#0e6b54] transition hover:bg-[#0e6b54]/15 dark:bg-[#63e6b6]/10 dark:text-[#63e6b6]"
                     >
                       View service
@@ -237,7 +258,7 @@ export default async function CustomerOverviewPage() {
                         {booking.title}
                       </p>
                       <p className="mt-0.5 text-[10.5px] text-[#87948d]">
-                        #{booking.id.toUpperCase()} ·{" "}
+                        #{booking.bookingNumber ?? booking.id.toUpperCase()} ·{" "}
                         {formatDate(booking.preferredDate)} ·{" "}
                         {money(booking.basePrice)}
                       </p>
@@ -254,6 +275,18 @@ export default async function CustomerOverviewPage() {
                     </Link>
                   </div>
                 ))}
+                {recent.length === 0 && (
+                  <p className="py-4 text-[12px] text-[#5f6f68] dark:text-[#9dab9f]">
+                    No bookings yet.{" "}
+                    <Link
+                      href="/services"
+                      className="font-semibold text-[#0e6b54] hover:underline dark:text-[#63e6b6]"
+                    >
+                      Browse services
+                    </Link>
+                    .
+                  </p>
+                )}
               </div>
             </section>
           </div>

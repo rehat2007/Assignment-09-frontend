@@ -10,13 +10,15 @@ export type BookingStatus =
 
 export type CustomerBooking = {
   id: string;
+  bookingNumber?: string;
   serviceId: string;
+  serviceSlug?: string;
   title: string;
   category: ServiceCategory;
   technician: string;
   preferredDate: string;
   basePrice: number;
-  finalAmount: number;
+  finalAmount: number | null;
   status: BookingStatus;
   paymentStatus: "paid" | "unpaid";
   updatedAt: string;
@@ -25,6 +27,7 @@ export type CustomerBooking = {
 export type CustomerPayment = {
   id: string;
   bookingId: string;
+  bookingNumber?: string;
   serviceTitle: string;
   technician: string;
   amount: number;

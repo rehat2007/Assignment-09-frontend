@@ -34,7 +34,7 @@ export function CustomerPayments({
       ["Transaction ID", "Booking", "Service", "Technician", "Amount", "Paid at"],
       ...payments.map((payment) => [
         payment.transactionId,
-        payment.bookingId,
+        payment.bookingNumber ?? payment.bookingId,
         payment.serviceTitle,
         payment.technician,
         String(payment.amount),
@@ -90,15 +90,15 @@ export function CustomerPayments({
             Payment History
           </h1>
           <p className="mt-1 max-w-[58ch] text-[13px] text-[#5f6f68] dark:text-[#9dab9f]">
-            Every completed job you have paid for, with its Stripe transaction
-            ID.
+            Every completed job you have paid for, with its transaction ID.
           </p>
         </div>
 
         <button
           type="button"
           onClick={exportCsv}
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#d2ccbc] bg-white px-4 text-[12.5px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-white/15 dark:bg-[#101a16] dark:text-white dark:hover:bg-white/[0.04]"
+          disabled={payments.length === 0}
+          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#d2ccbc] bg-white px-4 text-[12.5px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:bg-[#101a16] dark:text-white dark:hover:bg-white/[0.04]"
         >
           <Download className="size-4" />
           Export CSV
@@ -143,11 +143,24 @@ export function CustomerPayments({
           </div>
           <span className="inline-flex w-fit items-center gap-1.5 rounded-[6px] bg-[#e4f2ec] px-2.5 py-1.5 text-[10px] font-semibold text-[#0e6b54] dark:bg-[#112c25] dark:text-[#43d3ab]">
             <span className="size-1.5 rounded-full bg-current" />
-            Stripe test mode
+            Checkout coming soon
           </span>
         </div>
 
         <div className="hidden overflow-x-auto md:block">
+          {payments.length === 0 && (
+            <div className="px-5 py-12 text-center">
+              <Receipt className="mx-auto size-8 text-[#87948d]" />
+              <p className="mt-3 font-heading text-[15px] font-bold text-[#0f1a15] dark:text-white">
+                No payments yet
+              </p>
+              <p className="mx-auto mt-2 max-w-[42ch] text-[12px] leading-[1.6] text-[#5f6f68] dark:text-[#9dab9f]">
+                Payments appear here after a completed repair is paid. Stripe
+                checkout is coming soon.
+              </p>
+            </div>
+          )}
+          {payments.length > 0 && (
           <table className="w-full min-w-[820px] text-left">
             <thead>
               <tr className="border-b border-[#e5e1d6] text-[9.5px] uppercase tracking-[0.08em] text-[#87948d] dark:border-white/[0.08]">
@@ -167,7 +180,7 @@ export function CustomerPayments({
                       {payment.serviceTitle}
                     </p>
                     <p className="mt-0.5 text-[10px] text-[#87948d]">
-                      #{payment.bookingId.toUpperCase()}
+                      #{payment.bookingNumber ?? payment.bookingId.toUpperCase()}
                     </p>
                   </td>
                   <td className="px-3 py-4 text-[#5f6f68] dark:text-[#9dab9f]">
@@ -198,9 +211,20 @@ export function CustomerPayments({
               ))}
             </tbody>
           </table>
+          )}
         </div>
 
         <div className="divide-y divide-[#e5e1d6] md:hidden dark:divide-white/[0.07]">
+          {payments.length === 0 && (
+            <div className="px-5 py-10 text-center">
+              <p className="font-heading text-[14px] font-bold text-[#0f1a15] dark:text-white">
+                No payments yet
+              </p>
+              <p className="mt-2 text-[11.5px] leading-[1.6] text-[#5f6f68] dark:text-[#9dab9f]">
+                Payments appear here after a completed repair is paid.
+              </p>
+            </div>
+          )}
           {payments.map((payment) => (
             <div key={payment.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
@@ -235,7 +259,7 @@ export function CustomerPayments({
         <div className="flex flex-col gap-2 border-t border-[#e5e1d6] px-5 py-3 text-[10px] text-[#87948d] sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.08]">
           <span className="flex items-center gap-1.5">
             <ShieldCheck className="size-3.5" />
-            Secured by Stripe · test card 4242 4242 4242 4242
+            Stripe checkout is not connected yet.
           </span>
           <span>
             Showing {payments.length} of {payments.length}
@@ -271,7 +295,7 @@ export function CustomerPayments({
             </div>
 
             <dl className="mt-4 grid gap-2.5 border-y border-[#e5e1d6] py-4 text-[11.5px] dark:border-white/[0.08]">
-              <Row label="Booking" value={`#${invoice.bookingId.toUpperCase()}`} />
+              <Row label="Booking" value={`#${invoice.bookingNumber ?? invoice.bookingId.toUpperCase()}`} />
               <Row label="Technician" value={invoice.technician} />
               <Row label="Paid on" value={formatDate(invoice.paidAt)} />
               <Row label="Transaction" value={invoice.transactionId} mono />
