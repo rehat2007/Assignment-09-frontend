@@ -67,7 +67,7 @@ export function DashboardPanel({
 
           <div className="flex w-full items-center gap-3 rounded-2xl border border-[#e5e1d6] bg-white p-3 pr-5 sm:w-auto dark:border-white/[0.08] dark:bg-[#101a16]">
             <span
-              className="size-11 shrink-0 rounded-full bg-[#c9f5db] bg-cover bg-center text-[13px] font-bold text-[#0b3b26]"
+              className="size-11 shrink-0 rounded-full bg-[#f6e7c8] bg-cover bg-center text-[13px] font-bold text-[#a86a12]"
               style={user.image ? { backgroundImage: `url(${user.image})` } : undefined}
             >
               {!user.image && (

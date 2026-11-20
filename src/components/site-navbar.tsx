@@ -3,9 +3,16 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  UserRound,
+  X,
+} from "lucide-react";
 import { cn } from "cn";
 import { Brand } from "@/components/brand";
+import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { authClient } from "@/lib/auth-client";
 import { getAppRole } from "@/lib/roles";
@@ -51,8 +58,14 @@ export function SiteNavbar() {
     });
   }
 
-  // Auth pages render their own full-screen shell and header.
-  if (pathname === "/sign-in" || pathname === "/sign-up") return null;
+  // Auth and dashboard pages render their own full-screen shells.
+  if (
+    pathname === "/sign-in" ||
+    pathname === "/sign-up" ||
+    pathname.startsWith("/dashboard")
+  ) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-black/[0.07] bg-[#f6f4ee]/95 backdrop-blur-md dark:border-white/[0.08] dark:bg-[#080f0c]/95">
@@ -70,7 +83,7 @@ export function SiteNavbar() {
                 href={link.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "relative flex h-full items-center rounded-[9px] px-[13px] text-[14px] transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
+                  "relative flex h-10 items-center rounded-[9px] px-3 text-[14px] transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
                   isActive
                     ? "font-bold text-[#0f1a15] dark:text-white"
                     : "font-medium text-[#5f6f68] hover:text-[#0f1a15] dark:text-[#9dab9f] dark:hover:text-white",
@@ -79,7 +92,7 @@ export function SiteNavbar() {
                 {link.label}
 
                 {isActive && (
-                  <span className="absolute inset-x-[13px] bottom-0 h-[2px] rounded-t-[3px] bg-[#0e6b54] dark:bg-[#43d3ab]" />
+                  <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[#0e6b54] dark:bg-[#43d3ab]" />
                 )}
               </Link>
             );
@@ -100,46 +113,16 @@ export function SiteNavbar() {
               className="hidden size-8 animate-pulse rounded-full bg-black/10 sm:block dark:bg-white/10"
             />
           ) : user ? (
-            <>
-              <Link
-                href="/dashboard"
-                className="hidden items-center gap-2 rounded-[11px] px-1.5 py-1 transition-colors hover:bg-black/[0.04] sm:flex dark:hover:bg-white/[0.06]"
-              >
-                <span
-                  className="size-8 shrink-0 rounded-full bg-[#c9f5db] bg-cover bg-center text-[10px] font-bold text-[#0b3b26]"
-                  style={
-                    user.image
-                      ? { backgroundImage: `url(${user.image})` }
-                      : undefined
-                  }
-                >
-                  {!user.image && (
-                    <span className="flex size-full items-center justify-center">
-                      {initials(user.name)}
-                    </span>
-                  )}
-                </span>
-
-                <span className="hidden flex-col leading-tight lg:flex">
-                  <span className="max-w-[110px] truncate text-[12.5px] font-semibold text-[#27352f] dark:text-[#edf4ef]">
-                    {user.name}
-                  </span>
-                  <span className="text-[10px] capitalize text-[#5f6f68] dark:text-[#9dab9f]">
-                    {role}
-                  </span>
-                </span>
-              </Link>
-
-              <button
-                type="button"
-                onClick={handleSignOut}
-                aria-label="Sign out"
-                title="Sign out"
-                className="hidden size-10 items-center justify-center rounded-[11px] text-[#5f6f68] transition-colors hover:bg-black/[0.04] hover:text-[#0f1a15] sm:flex dark:text-[#9dab9f] dark:hover:bg-white/[0.06] dark:hover:text-white"
-              >
-                <LogOut className="size-[18px]" />
-              </button>
-            </>
+            <ProfileMenu
+              key={pathname}
+              user={{
+                name: user.name,
+                email: user.email,
+                image: user.image,
+              }}
+              role={role ?? "customer"}
+              onSignOut={handleSignOut}
+            />
           ) : (
             <>
               <Link
@@ -209,7 +192,7 @@ export function SiteNavbar() {
             <div className="mt-2 border-t border-black/[0.07] pt-3 dark:border-white/[0.08]">
               <div className="flex items-center gap-3 rounded-xl border border-black/[0.07] p-3 dark:border-white/[0.08]">
                 <span
-                  className="size-10 shrink-0 rounded-full bg-[#c9f5db] bg-cover bg-center text-[12px] font-bold text-[#0b3b26]"
+                  className="size-10 shrink-0 rounded-full bg-[#f6e7c8] bg-cover bg-center text-[12px] font-bold text-[#a86a12]"
                   style={
                     user.image
                       ? { backgroundImage: `url(${user.image})` }
@@ -239,6 +222,15 @@ export function SiteNavbar() {
               >
                 <LayoutDashboard className="size-4" />
                 Dashboard
+              </Link>
+
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 rounded-[10px] px-3 py-3 text-[14px] font-semibold text-[#27352f] hover:bg-black/[0.04] dark:text-[#cfdbd3] dark:hover:bg-white/[0.06]"
+              >
+                <UserRound className="size-4" />
+                Update profile
               </Link>
 
               <button
