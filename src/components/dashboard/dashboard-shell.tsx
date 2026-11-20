@@ -27,8 +27,13 @@ import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { authClient } from "@/lib/auth-client";
 import type { AppRole } from "@/lib/roles";
+import { PENDING_SERVICES } from "@/lib/admin-data";
+import {
+  TECHNICIAN_REQUESTS,
+  TECHNICIAN_SERVICES,
+} from "@/lib/technician-data";
 
-type NavItem = { label: string; href: string; icon: LucideIcon };
+type NavItem = { label: string; href: string; icon: LucideIcon; count?: number };
 
 const CUSTOMER_NAV: NavItem[] = [
   { label: "Overview", href: "/dashboard/customer", icon: LayoutGrid },
@@ -38,15 +43,26 @@ const CUSTOMER_NAV: NavItem[] = [
 
 const TECHNICIAN_NAV: NavItem[] = [
   { label: "Overview", href: "/dashboard/technician", icon: LayoutGrid },
-  { label: "Add a Service", href: "/dashboard/technician/services/new", icon: Plus },
-  { label: "My Services", href: "/dashboard/technician/services", icon: Wrench },
-  { label: "Manage Requests", href: "/dashboard/technician/requests", icon: ClipboardList },
+  { label: "Add a Service", href: "/dashboard/technician/add-service", icon: Plus },
+  { label: "My Services", href: "/dashboard/technician/my-services", icon: Wrench },
+  {
+    label: "Manage Requests",
+    href: "/dashboard/technician/requests",
+    icon: ClipboardList,
+    count: TECHNICIAN_REQUESTS.filter((request) => request.status === "requested")
+      .length,
+  },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { label: "Overview", href: "/dashboard/admin", icon: LayoutGrid },
   { label: "Users", href: "/dashboard/admin/users", icon: Users },
-  { label: "Service Approval", href: "/dashboard/admin/services", icon: ShieldCheck },
+  {
+    label: "Service Approval",
+    href: "/dashboard/admin/services",
+    icon: ShieldCheck,
+    count: PENDING_SERVICES.length,
+  },
   { label: "All Bookings", href: "/dashboard/admin/bookings", icon: ClipboardList },
   { label: "Transactions", href: "/dashboard/admin/transactions", icon: CreditCard },
 ];
@@ -76,7 +92,7 @@ const WORKSPACES: Record<
     promo: {
       title: "Keep your work coming in",
       text: "Update your listings and respond to requests from one place.",
-      href: "/dashboard/technician/services",
+      href: "/dashboard/technician/my-services",
       cta: "My services",
     },
   },
@@ -113,7 +129,12 @@ export function DashboardShell({
   role,
   children,
 }: {
-  user: { name: string; email: string; image?: string | null };
+  user: {
+    name: string;
+    email: string;
+    image?: string | null;
+    area?: string | null;
+  };
   role: AppRole;
   children: ReactNode;
 }) {
@@ -198,9 +219,14 @@ export function DashboardShell({
               {user.name}
             </p>
             <p className="mt-0.5 truncate text-[10.5px] text-[#5f6f68] dark:text-[#9dab9f]">
-              {user.email}
+              {user.area || "Dhaka"}
             </p>
           </div>
+          {workspaceKey === "technician" && (
+            <span className="ml-auto shrink-0 rounded-[5px] bg-[#0e6b54] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.06em] text-white dark:bg-[#63e6b6] dark:text-[#06231b]">
+              Pro
+            </span>
+          )}
         </div>
 
         <p className="mt-6 px-2 text-[9.5px] font-bold uppercase tracking-[0.14em] text-[#87948d]">
@@ -230,6 +256,11 @@ export function DashboardShell({
                 )}
                 <Icon className="size-4 shrink-0" />
                 {item.label}
+                {item.count ? (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#fcf0d7] px-1.5 text-[9.5px] font-bold text-[#a65c07] dark:bg-[#2b2415] dark:text-[#f0bb6a]">
+                    {item.count}
+                  </span>
+                ) : null}
               </Link>
             );
           })}
@@ -265,21 +296,43 @@ export function DashboardShell({
         </nav>
 
         <div className="mt-auto pt-6">
-          <div className="rounded-xl border border-[#bfe7d5] bg-[#e9f6ef] p-3.5 dark:border-[#1b4b39] dark:bg-[#0d231a]">
-            <p className="text-[12px] font-bold text-[#0e6b54] dark:text-[#63e6b6]">
-              {workspace.promo.title}
-            </p>
-            <p className="mt-1 text-[10.5px] leading-[1.5] text-[#5f6f68] dark:text-[#9dab9f]">
-              {workspace.promo.text}
-            </p>
-            <Link
-              href={workspace.promo.href}
-              onClick={() => setMobileOpen(false)}
-              className="mt-3 flex h-9 items-center justify-center rounded-[7px] bg-[#0e6b54] text-[11.5px] font-semibold text-white transition hover:bg-[#0a5342] dark:bg-[#63e6b6] dark:text-[#06231b] dark:hover:bg-[#7cf0c6]"
-            >
-              {workspace.promo.cta}
-            </Link>
-          </div>
+          {workspaceKey === "technician" ? (
+            <div className="rounded-xl border border-[#bfe7d5] bg-[#e9f6ef] p-3.5 dark:border-[#1b4b39] dark:bg-[#0d231a]">
+              <span className="inline-flex rounded-[4px] bg-[#0e6b54] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.08em] text-white dark:bg-[#63e6b6] dark:text-[#06231b]">
+                Pro plan
+              </span>
+              <p className="mt-2 text-[12px] font-bold text-[#0e6b54] dark:text-[#63e6b6]">
+                Unlimited listings
+              </p>
+              <p className="mt-1 text-[10.5px] leading-[1.5] text-[#5f6f68] dark:text-[#9dab9f]">
+                Your services carry the Verified Pro badge.{" "}
+                {TECHNICIAN_SERVICES.length} active.
+              </p>
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setMobileOpen(false)}
+                className="mt-3 flex h-9 items-center justify-center rounded-[7px] bg-[#0e6b54] text-[11.5px] font-semibold text-white transition hover:bg-[#0a5342] dark:bg-[#63e6b6] dark:text-[#06231b] dark:hover:bg-[#7cf0c6]"
+              >
+                Manage plan
+              </Link>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-[#bfe7d5] bg-[#e9f6ef] p-3.5 dark:border-[#1b4b39] dark:bg-[#0d231a]">
+              <p className="text-[12px] font-bold text-[#0e6b54] dark:text-[#63e6b6]">
+                {workspace.promo.title}
+              </p>
+              <p className="mt-1 text-[10.5px] leading-[1.5] text-[#5f6f68] dark:text-[#9dab9f]">
+                {workspace.promo.text}
+              </p>
+              <Link
+                href={workspace.promo.href}
+                onClick={() => setMobileOpen(false)}
+                className="mt-3 flex h-9 items-center justify-center rounded-[7px] bg-[#0e6b54] text-[11.5px] font-semibold text-white transition hover:bg-[#0a5342] dark:bg-[#63e6b6] dark:text-[#06231b] dark:hover:bg-[#7cf0c6]"
+              >
+                {workspace.promo.cta}
+              </Link>
+            </div>
+          )}
 
           <button
             type="button"

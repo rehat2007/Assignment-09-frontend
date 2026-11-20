@@ -16,6 +16,7 @@ export default async function DashboardLayout({
         name: session.user.name,
         email: session.user.email,
         image: session.user.image,
+        area: session.user.area,
       }}
       role={role}
     >

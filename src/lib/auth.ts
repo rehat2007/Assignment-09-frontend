@@ -38,6 +38,21 @@ export const auth = betterAuth({
         defaultValue: "customer",
         input: true,
       },
+      phone: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      area: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      bio: {
+        type: "string",
+        required: false,
+        input: true,
+      },
     },
   },
   databaseHooks: {
