@@ -125,9 +125,11 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
         });
 
         if (response.ok) {
-          const data = (await response.json()) as { url?: string };
-          if (data.url) {
-            await authClient.updateUser({ image: data.url });
+          const data = (await response.json()) as {
+            data?: { url?: string };
+          };
+          if (data.data?.url) {
+            await authClient.updateUser({ image: data.data.url });
           }
         }
       } catch {

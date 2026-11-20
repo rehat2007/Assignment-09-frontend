@@ -24,17 +24,19 @@ import {
 import { HomeMotion } from "@/components/home-motion";
 import { SiteFooter } from "@/components/site-footer";
 import { getAppRole, getSession } from "@/lib/authz";
+import { getServiceBySlug, getServiceReviews } from "@/lib/catalog";
 import { formatDate } from "@/lib/customer-data";
-import { getServiceDetail, REVIEW_DISTRIBUTION } from "@/lib/service-details";
-import { SERVICES } from "@/lib/services";
 import { CATEGORY_ICONS, CATEGORY_TONES, TONES } from "@/lib/service-styles";
+
+// Placeholder until Phase 8 replaces this with an aggregation over reviews.
+const REVIEW_DISTRIBUTION = [78, 14, 5, 2, 1];
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
 async function getService(id: string) {
-  return SERVICES.find((service) => service.id === id);
+  return getServiceBySlug(id);
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -53,7 +55,7 @@ export default async function ServiceDetailPage({ params }: Props) {
 
   if (!service) notFound();
 
-  const detail = getServiceDetail(service);
+  const reviews = (await getServiceReviews(id, { pageSize: 3 })).data;
   const session = await getSession();
   const user = session?.user ?? null;
   const role = user ? getAppRole(user) : null;
@@ -167,7 +169,7 @@ export default async function ServiceDetailPage({ params }: Props) {
                 What&apos;s included
               </h2>
               <div className="grid grid-cols-1 gap-x-5 gap-y-2.5 sm:grid-cols-2">
-                {detail.includes.map((item) => (
+                {service.includes.map((item) => (
                   <div
                     key={item}
                     className="flex items-start gap-[9px] text-[13.5px] text-[#27352f] dark:text-[#cfdbd3]"
@@ -208,12 +210,12 @@ export default async function ServiceDetailPage({ params }: Props) {
                 <Spec
                   icon={<CalendarDays className="size-4" />}
                   label="Earliest availability"
-                  value={detail.availability}
+                  value={service.availabilityNote}
                 />
                 <Spec
                   icon={<ShieldCheck className="size-4" />}
                   label="Warranty"
-                  value={detail.warranty}
+                  value={service.warranty}
                 />
               </div>
             </section>
@@ -231,8 +233,8 @@ export default async function ServiceDetailPage({ params }: Props) {
 
                 <div className="min-w-0 flex-1">
                   <h3 className="flex flex-wrap items-center gap-2 font-heading text-[15px] font-bold text-[#0f1a15] dark:text-white">
-                    {detail.technician.name}
-                    {detail.technician.plan === "pro" && (
+                    {service.technicianProfile.name}
+                    {service.technicianProfile.plan === "pro" && (
                       <span className="inline-flex items-center gap-1.5 rounded-[6px] bg-[#f7dfb4] px-2 py-0.5 text-[9.5px] font-bold text-[#8a5200] dark:bg-[#3a2a10] dark:text-[#f2b25c]">
                         <span className="size-1 rounded-full bg-current" />
                         Pro
@@ -240,17 +242,17 @@ export default async function ServiceDetailPage({ params }: Props) {
                     )}
                   </h3>
                   <p className="mt-1 text-[12.5px] leading-[1.6] text-[#5f6f68] dark:text-[#9dab9f]">
-                    {detail.technician.bio}
+                    {service.technicianProfile.bio}
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-x-[14px] gap-y-3">
                     <TechStat
-                      value={`${detail.technician.rating.toFixed(1)} ★`}
+                      value={`${service.technicianProfile.rating.toFixed(1)} ★`}
                       label="Rating"
                     />
-                    <TechStat value={String(detail.technician.jobs)} label="Jobs done" />
-                    <TechStat value={detail.technician.area} label="Based in" />
-                    <TechStat value={detail.technician.repliesIn} label="Replies in" />
+                    <TechStat value={String(service.technicianProfile.jobs)} label="Jobs done" />
+                    <TechStat value={service.technicianProfile.area} label="Based in" />
+                    <TechStat value={service.technicianProfile.repliesIn} label="Replies in" />
                   </div>
                 </div>
               </div>
@@ -295,10 +297,10 @@ export default async function ServiceDetailPage({ params }: Props) {
               </div>
 
               <div className="mt-1.5">
-                {detail.reviews.length > 0 ? (
-                  detail.reviews.map((review) => (
+                {reviews.length > 0 ? (
+                  reviews.map((review) => (
                     <div
-                      key={`${review.name}-${review.at}`}
+                      key={review.id}
                       className="flex gap-3 border-b border-[#e5e1d6] py-4 last:border-0 dark:border-white/[0.07]"
                     >
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f6e7c8] text-[10px] font-bold text-[#a86a12] dark:bg-[#2b2415] dark:text-[#f0bb6a]">
@@ -373,7 +375,7 @@ export default async function ServiceDetailPage({ params }: Props) {
                 <BookRow
                   icon={<UserRound className="size-3.5" />}
                   label="Technician"
-                  value={detail.technician.name}
+                  value={service.technicianProfile.name}
                 />
                 <BookRow
                   icon={<ModeIcon className="size-3.5" />}

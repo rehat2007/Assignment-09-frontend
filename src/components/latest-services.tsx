@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { FEATURED_SERVICES } from "@/lib/home-data";
+import type { ServiceSummary } from "@/lib/catalog";
 import { ServiceCard } from "@/components/service-card";
 
-export function LatestServices() {
+export function LatestServices({
+  services,
+  total,
+}: {
+  services: ServiceSummary[];
+  total: number;
+}) {
   return (
     <section
       id="services"
@@ -31,7 +37,7 @@ export function LatestServices() {
             href="/services"
             className="inline-flex w-fit shrink-0 items-center gap-2 rounded-[11px] border border-[#d2ccbc] bg-white px-4 py-[11px] text-[14px] font-semibold text-[#27352f] transition hover:-translate-y-px hover:shadow-sm dark:border-white/15 dark:bg-white/[0.04] dark:text-white"
           >
-            Browse all 15 services
+            Browse all {total} services
             <ArrowRight className="size-4" />
           </Link>
         </div>
@@ -40,7 +46,7 @@ export function LatestServices() {
           data-reveal-group
           className="mt-[34px] grid grid-cols-1 gap-4 min-[761px]:grid-cols-2 min-[761px]:gap-[22px] min-[1101px]:grid-cols-3"
         >
-          {FEATURED_SERVICES.map((service) => (
+          {services.map((service) => (
             <ServiceCard key={service.id} service={service} />
           ))}
         </div>

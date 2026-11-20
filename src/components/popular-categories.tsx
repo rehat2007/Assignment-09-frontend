@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import type { CategorySummary } from "@/lib/catalog";
 import type { ServiceCategory } from "@/lib/services";
-import { CATEGORY_SUMMARY } from "@/lib/home-data";
 import { CATEGORY_ICONS } from "@/lib/service-styles";
 import { WhyFixmate } from "@/components/why-fixmate";
 
@@ -20,7 +20,15 @@ const ICON_TILES: Record<ServiceCategory, string> = {
     "border-[#efe5c4] bg-[#f9f3dc] text-[#a9861b] dark:border-[#433a1b] dark:bg-[#2a2410] dark:text-[#e5ca74]",
 };
 
-export function PopularCategories() {
+export function PopularCategories({
+  categories,
+  serviceCount,
+  technicianCount,
+}: {
+  categories: CategorySummary[];
+  serviceCount: number;
+  technicianCount: number;
+}) {
   return (
     <section
       id="categories"
@@ -40,7 +48,7 @@ export function PopularCategories() {
           </div>
 
           <p className="shrink-0 text-[13px] font-medium text-[#87948d] min-[861px]:pb-2 dark:text-[#9dab9f]">
-            15 live services · 3 verified technicians
+            {serviceCount} live services · {technicianCount} verified technicians
           </p>
         </div>
 
@@ -48,7 +56,7 @@ export function PopularCategories() {
           data-reveal-group
           className="mt-[34px] grid grid-cols-1 gap-2.5 min-[381px]:grid-cols-2 min-[561px]:gap-3.5 min-[861px]:grid-cols-3 min-[981px]:grid-cols-4"
         >
-          {CATEGORY_SUMMARY.map(({ name, count }) => {
+          {categories.map(({ name, count }) => {
             const Icon = CATEGORY_ICONS[name];
 
             return (

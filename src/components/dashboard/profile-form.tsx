@@ -141,15 +141,27 @@ export function ProfileForm({
 
       if (!response.ok) {
         const data = (await response.json().catch(() => ({}))) as {
-          error?: string;
+          error?: { message?: string } | string;
         };
-        setError(data.error ?? "Could not upload the photo.");
+        const message =
+          typeof data.error === "string" ? data.error : data.error?.message;
+        setError(message ?? "Could not upload the photo.");
         setPending(false);
         return;
       }
 
-      const data = (await response.json()) as { url?: string };
-      imageUrl = data.url;
+      const data = (await response.json()) as {
+        data?: { url?: string };
+      };
+      const url = data.data?.url;
+
+      if (!url) {
+        setError("Could not upload the photo.");
+        setPending(false);
+        return;
+      }
+
+      imageUrl = url;
     }
 
     const { error: authError } = await authClient.updateUser({

@@ -14,13 +14,7 @@ import {
 import { HomeMotion } from "@/components/home-motion";
 import { ServiceCard } from "@/components/service-card";
 import { SiteFooter } from "@/components/site-footer";
-import {
-  CATEGORIES,
-  PAGE_SIZE,
-  SERVICES,
-  type ServiceCategory,
-  type ServiceMode,
-} from "@/lib/services";
+import { getCatalogMeta, getServices } from "@/lib/catalog";
 import { CATEGORY_ICONS } from "@/lib/service-styles";
 
 export const metadata: Metadata = {
@@ -57,63 +51,37 @@ function first(value: string | string[] | undefined) {
 export default async function ServicesPage({ searchParams }: Props) {
   const params = await searchParams;
 
-  const q = first(params.q).trim();
+  const q = first(params.q).trim().slice(0, 100);
   const rawCategory = first(params.category);
   const rawMode = first(params.mode);
   const rawSort = first(params.sort);
   const rawPage = first(params.page);
 
-  const category = CATEGORIES.includes(rawCategory as ServiceCategory)
-    ? (rawCategory as ServiceCategory)
-    : "";
-  const mode: ServiceMode | "" =
-    rawMode === "Home Visit" || rawMode === "Shop Drop-off" ? rawMode : "";
+  const meta = await getCatalogMeta();
+
+  const category =
+    meta.categories.find(({ name }) => name === rawCategory)?.name ?? "";
+  const mode = meta.modes.find((value) => value === rawMode) ?? "";
   const sort: Sort = SORT_OPTIONS.some((option) => option.value === rawSort)
     ? (rawSort as Sort)
     : "newest";
   const page = Math.max(1, Math.floor(Number(rawPage) || 1));
 
-  let list = [...SERVICES];
+  const result = await getServices({
+    q,
+    category,
+    mode,
+    sort,
+    page,
+    pageSize: meta.pageSize,
+  });
 
-  if (q) {
-    const needle = q.toLowerCase();
-    list = list.filter((service) =>
-      [
-        service.title,
-        service.category,
-        service.description,
-        service.technician,
-        service.location,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(needle),
-    );
-  }
-
-  if (category) {
-    list = list.filter((service) => service.category === category);
-  }
-
-  if (mode) {
-    list = list.filter((service) => service.mode === mode);
-  }
-
-  if (sort === "price-asc") {
-    list.sort((a, b) => a.price - b.price);
-  } else if (sort === "price-desc") {
-    list.sort((a, b) => b.price - a.price);
-  } else if (sort === "rating") {
-    list.sort((a, b) => b.rating - a.rating);
-  } else {
-    list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
-
-  const total = list.length;
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const current = Math.min(page, pages);
-  const shown = list.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+  const shown = result.data;
+  const total = result.meta.total;
+  const pages = Math.max(1, result.meta.totalPages);
+  const current = result.meta.page;
   const hasFilters = Boolean(q || category || mode || sort !== "newest");
+  const serviceCount = meta.stats.services;
 
   function hrefFor(
     overrides: Partial<{
@@ -137,7 +105,7 @@ export default async function ServicesPage({ searchParams }: Props) {
     return query ? `/services?${query}` : "/services";
   }
 
-  const techCount = new Set(SERVICES.map((service) => service.technician)).size;
+  const techCount = meta.stats.technicians;
 
   return (
     <>
@@ -174,9 +142,9 @@ export default async function ServicesPage({ searchParams }: Props) {
             </div>
 
             <div className="flex w-full justify-between gap-6 border-t border-[#e5e1d6] pt-5 sm:w-auto sm:justify-start sm:border-0 sm:pt-0 dark:border-white/[0.08]">
-              <Stat value={SERVICES.length} label="Live services" />
+              <Stat value={serviceCount} label="Live services" />
               <Stat value={techCount} label="Verified technicians" />
-              <Stat value={CATEGORIES.length} label="Categories" />
+              <Stat value={meta.categories.length} label="Categories" />
             </div>
           </div>
         </header>
@@ -198,6 +166,7 @@ export default async function ServicesPage({ searchParams }: Props) {
                   type="search"
                   name="q"
                   defaultValue={q}
+                  maxLength={100}
                   placeholder="Search services or areas…"
                   aria-label="Search services"
                   className="h-11 w-full rounded-[11px] border border-[#e5e1d6] bg-white py-0 pl-[39px] pr-3.5 text-[14px] text-[#0f1a15] outline-none transition placeholder:text-[#87948d] focus:border-[#0e6b54] focus:ring-[3px] focus:ring-[#0e6b54]/10 dark:border-[#24332c] dark:bg-[#101a16] dark:text-white dark:focus:border-[#43d3ab]"
@@ -234,10 +203,10 @@ export default async function ServicesPage({ searchParams }: Props) {
                 href={hrefFor({ category: "", page: 1 })}
                 active={!category}
                 label="All services"
-                count={SERVICES.length}
+                count={serviceCount}
               />
 
-              {CATEGORIES.map((name) => {
+              {meta.categories.map(({ name, count }) => {
                 const Icon = CATEGORY_ICONS[name];
 
                 return (
@@ -249,10 +218,7 @@ export default async function ServicesPage({ searchParams }: Props) {
                     })}
                     active={category === name}
                     label={name}
-                    count={
-                      SERVICES.filter((service) => service.category === name)
-                        .length
-                    }
+                    count={count}
                     icon={<Icon className="size-3.5" />}
                   />
                 );

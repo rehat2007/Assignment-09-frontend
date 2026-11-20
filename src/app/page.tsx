@@ -8,8 +8,18 @@ import { Testimonials } from "@/components/testimonials";
 import { CtaSection } from "@/components/cta";
 import { SiteFooter } from "@/components/site-footer";
 import { HomeMotion } from "@/components/home-motion";
+import { getCatalogMeta, getServices } from "@/lib/catalog";
 
-export default function Home() {
+export const revalidate = 60;
+
+export default async function Home() {
+  const [meta, featured] = await Promise.all([
+    getCatalogMeta(),
+    getServices({ sort: "newest", pageSize: 6 }),
+  ]);
+
+  const categoryNames = meta.categories.map((category) => category.name);
+
   return (
     <>
       <HomeMotion />
@@ -22,14 +32,18 @@ export default function Home() {
           {/* Extra glow behind the repair illustration. */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_32%,rgba(82,183,137,0.16),transparent_45%)] dark:bg-[radial-gradient(circle_at_78%_32%,rgba(38,160,112,0.20),transparent_44%)]" />
 
-          <HeroSection />
+          <HeroSection categories={categoryNames} />
         </div>
 
-        <CategoryStrip />
-        <LatestServices />
+        <CategoryStrip categories={categoryNames} />
+        <LatestServices services={featured.data} total={meta.stats.services} />
         <HowItWorks />
         <TrustBand />
-        <PopularCategories />
+        <PopularCategories
+          categories={meta.categories}
+          serviceCount={meta.stats.services}
+          technicianCount={meta.stats.technicians}
+        />
         <Testimonials />
         <CtaSection />
       </main>

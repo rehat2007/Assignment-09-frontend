@@ -7,17 +7,9 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { CATEGORIES, SERVICES, newestServices } from "@/lib/services";
 
-/* Copy and seed data for the homepage, kept in one place so the
-   section components stay short and easy to scan. */
-
-export const FEATURED_SERVICES = newestServices(6);
-
-export const CATEGORY_SUMMARY = CATEGORIES.map((name) => ({
-  name,
-  count: SERVICES.filter((service) => service.category === name).length,
-}));
+/* Static copy for the homepage. Catalog-derived data comes from the Express
+   API in `src/app/page.tsx` so these components stay presentational. */
 
 export const STEPS: Array<{
   title: string;

@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { CATEGORY_SUMMARY } from "@/lib/home-data";
+import type { ServiceCategory } from "@/lib/services";
 import { CATEGORY_ICONS } from "@/lib/service-styles";
 
-export function CategoryStrip() {
+export function CategoryStrip({
+  categories,
+}: {
+  categories: ServiceCategory[];
+}) {
   return (
     <div className="border-y border-black/[0.08] bg-white/55 dark:border-white/[0.07] dark:bg-white/[0.02]">
       <div className="site-container flex flex-wrap items-center justify-between gap-[18px] py-4">
@@ -15,7 +19,7 @@ export function CategoryStrip() {
           aria-label="Popular categories"
           className="order-3 flex w-full items-center gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[761px]:order-none min-[761px]:w-auto min-[761px]:flex-1 min-[761px]:flex-wrap min-[761px]:justify-center min-[761px]:overflow-visible min-[761px]:pb-0"
         >
-          {CATEGORY_SUMMARY.map(({ name }) => {
+          {categories.map((name) => {
             const Icon = CATEGORY_ICONS[name];
 
             return (

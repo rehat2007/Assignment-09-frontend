@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 import { RepairVisual } from "@/components/repair-visual";
-import { CATEGORY_SUMMARY } from "@/lib/home-data";
 
 const AVATARS = [
   { initials: "RH", color: "bg-[#cf6d6c]" },
@@ -23,7 +22,7 @@ const TRUST_ITEMS = [
   "30-day workmanship cover",
 ];
 
-export function HeroSection() {
+export function HeroSection({ categories }: { categories: string[] }) {
   return (
     <section className="relative z-10">
       <div className="site-container grid items-center gap-[18px] pt-[clamp(32px,4vw,46px)] pb-[clamp(44px,5vw,68px)] min-[861px]:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] min-[861px]:gap-7 min-[1101px]:gap-[56px]">
@@ -98,7 +97,7 @@ export function HeroSection() {
                 className="h-10 w-full cursor-pointer appearance-none bg-transparent pr-6 text-[13.5px] text-[#5f6f68] outline-none min-[721px]:w-[130px] dark:text-[#b6c8be] dark:[&>option]:bg-[#07130d]"
               >
                 <option value="">All categories</option>
-                {CATEGORY_SUMMARY.map(({ name }) => (
+                {categories.map((name) => (
                   <option key={name} value={name}>
                     {name}
                   </option>

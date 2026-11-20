@@ -135,18 +135,28 @@ fix_mate_backend/
       indexes.ts             # ensureIndexes()
     auth.ts                  # Better Auth instance
     roles.ts                 # getAppRole()
+    types/
+      models.ts              # collection documents/DTOs
     middleware/
       auth.ts                # requireUser / requireRole
-      errors.ts              # error handler
+      validate.ts            # body/query/params validation
+      request-context.ts     # request IDs + access logs
+      errors.ts              # centralized error handler
     http/
-      response.ts            # ok(), fail(), pagination()
+      api-error.ts           # ApiError + factories
+      status.ts              # status code conventions
+      response.ts            # ok(), fail(), paginated()
     validation/
       auth.ts
+      common.ts
+      format.ts
       services.ts
       bookings.ts
       users.ts
       reviews.ts
+      payments.ts
     routes/
+      me.ts
       catalog.ts
       bookings.ts
       technician.ts
@@ -163,10 +173,12 @@ fix_mate_backend/
       payments.ts
       reviews.ts
     lib/
+      logger.ts              # structured JSON logs
       stripe.ts
       storage.ts
   scripts/
     seed.ts
+    seed-data.ts             # demo service/user fixture
     create-admin.ts
   .env
   package.json
@@ -456,17 +468,17 @@ export const getSession = cache(async () => {
 
 ### Tasks
 
-- [ ] Create `services`, `bookings`, `payments`, `reviews`, `technicianProfiles` collections.
-- [ ] Add TypeScript types/DTOs for each.
-- [ ] Add `ensureIndexes()`.
-- [ ] Add `scripts/seed.ts`.
-- [ ] Add `"seed": "tsx scripts/seed.ts"` to `package.json`.
-- [ ] Seed demo users through `auth.api.signUpEmail` so passwords are hashed correctly.
-- [ ] Seed technician profiles and admin role.
-- [ ] Seed the 15 listings from `src/lib/services.ts`.
-- [ ] Seed includes, warranty, and reviews from `src/lib/service-details.ts`.
-- [ ] Optionally seed preview bookings/payments for demo dashboards.
-- [ ] Run indexes once at seed/deploy time, not on every request.
+- [x] Create `services`, `bookings`, `payments`, `reviews`, `technicianProfiles` collections.
+- [x] Add TypeScript types/DTOs for each.
+- [x] Add `ensureIndexes()`.
+- [x] Add `scripts/seed.ts`.
+- [x] Add `"seed": "tsx scripts/seed.ts"` to `package.json`.
+- [x] Seed demo users through `auth.api.signUpEmail` so passwords are hashed correctly.
+- [x] Seed technician profiles and admin role.
+- [x] Seed the 15 listings from `src/lib/services.ts`.
+- [x] Seed includes, warranty, and reviews from `src/lib/service-details.ts`.
+- [ ] Optionally seed preview bookings/payments for demo dashboards. *(Skipped in Phase 1; Phase 4 creates real bookings.)*
+- [x] Run indexes once at seed/deploy time, not on every request.
 
 ### Seed data mapping
 
@@ -487,12 +499,12 @@ The seed script must settle on:
 
 ### Acceptance checks
 
-- [ ] MongoDB has 15 services.
-- [ ] Three technician users exist.
-- [ ] `slug` is unique.
-- [ ] Public services have `approval: "approved"` and `available: true`.
-- [ ] Indexes exist.
-- [ ] A small script can read 15 services from MongoDB with the shape the UI expects.
+- [x] MongoDB has 15 services.
+- [x] Three technician users exist.
+- [x] `slug` is unique.
+- [x] Public services have `approval: "approved"` and `available: true`.
+- [x] Indexes exist.
+- [x] A small script can read 15 services from MongoDB with the shape the UI expects.
 
 ---
 
@@ -502,20 +514,20 @@ The seed script must settle on:
 
 ### Tasks
 
-- [ ] Add `ApiError`.
-- [ ] Add response helpers: `ok()`, `fail()`, `paginated()`.
-- [ ] Add Zod schemas for every request body and query.
-- [ ] Add auth middleware.
-- [ ] Add validation middleware.
-- [ ] Add centralized error handler.
-- [ ] Add request IDs and structured logs.
-- [ ] Add pagination defaults:
+- [x] Add `ApiError`.
+- [x] Add response helpers: `ok()`, `fail()`, `paginated()`.
+- [x] Add Zod schemas for every request body and query.
+- [x] Add auth middleware.
+- [x] Add validation middleware.
+- [x] Add centralized error handler.
+- [x] Add request IDs and structured logs.
+- [x] Add pagination defaults:
   - Public catalog: 9
   - Dashboard tables: 20
   - Maximum: 100
-- [ ] Add status code conventions.
-- [ ] Add `GET /api/v1/me` (optional if the frontend reads `/api/auth/get-session` directly).
-- [ ] Decide whether profile updates use Better Auth `/api/auth/update-user` or `PATCH /api/v1/me`. Do not implement both paths.
+- [x] Add status code conventions.
+- [x] Add `GET /api/v1/me` (optional if the frontend reads `/api/auth/get-session` directly). *(Implemented as a read-only user/role endpoint.)*
+- [x] Decide whether profile updates use Better Auth `/api/auth/update-user` or `PATCH /api/v1/me`. Do not implement both paths. *(Chosen: profile updates stay on `/api/auth/update-user`.)*
 
 ### Response envelope
 
@@ -556,12 +568,12 @@ Error:
 
 ### Acceptance checks
 
-- [ ] No session → `401`.
-- [ ] Wrong role → `403`.
-- [ ] Invalid input → `400`/`422`.
-- [ ] Not found → `404`.
-- [ ] Invalid transition → `409`.
-- [ ] Errors always use the same envelope.
+- [x] No session → `401`.
+- [x] Wrong role → `403`.
+- [x] Invalid input → `400`/`422`.
+- [x] Not found → `404`.
+- [x] Invalid transition → `409`.
+- [x] Errors always use the same envelope.
 
 ---
 
@@ -571,12 +583,12 @@ Error:
 
 ### Endpoints
 
-- [ ] `GET /api/v1/meta`
-- [ ] `GET /api/v1/services`
-- [ ] `GET /api/v1/services/:slug`
-- [ ] `GET /api/v1/services/:slug/reviews`
-- [ ] `GET /api/v1/home` (P1)
-- [ ] `GET /api/v1/technicians/:id` (P1)
+- [x] `GET /api/v1/meta`
+- [x] `GET /api/v1/services`
+- [x] `GET /api/v1/services/:slug`
+- [x] `GET /api/v1/services/:slug/reviews`
+- [ ] `GET /api/v1/home` (P1) *(Deferred; the homepage uses `/meta` + `/services`.)*
+- [ ] `GET /api/v1/technicians/:id` (P1) *(Deferred; service detail includes `technicianProfile`.)*
 
 ### Query parameters
 
@@ -586,26 +598,30 @@ q, category, mode, sort=newest|price-asc|price-desc|rating, page, pageSize
 
 ### Frontend files
 
-- `src/app/page.tsx` and home sections
+- `src/app/page.tsx` and home sections (fetch meta + featured services, pass props down)
 - `src/app/services/page.tsx`
 - `src/app/services/[id]/page.tsx`
-- `src/lib/home-data.ts`
+- `src/lib/home-data.ts` (static copy only)
+- `src/lib/api.ts` (server-side API fetch helper)
+- `src/lib/catalog.ts` (catalog DTOs + fetchers)
 - `src/components/service-card.tsx` should keep its current shape
 
 Keep `src/lib/service-styles.ts`; it is pure frontend styling.
 
 ### Caching
 
-- Public catalog: revalidate/cache where appropriate.
+- Public catalog: `fetch` revalidate is 60 seconds; Express also sends `Cache-Control: public, max-age=60, stale-while-revalidate=300`.
 - Dashboard data: `no-store`.
+
+The review distribution bars remain a UI placeholder until Phase 8 replaces them with an aggregation.
 
 ### Acceptance checks
 
-- [ ] Search, category, mode, sort, and pagination still work through the URL.
-- [ ] Unknown slug returns `404`.
-- [ ] Only approved + available services appear.
-- [ ] `/services/[id]` no longer imports `SERVICES` or `SERVICE_DETAILS`.
-- [ ] The visual design is unchanged.
+- [x] Search, category, mode, sort, and pagination still work through the URL.
+- [x] Unknown slug returns `404`.
+- [x] Only approved + available services appear.
+- [x] `/services/[id]` no longer imports `SERVICES` or `SERVICE_DETAILS`.
+- [x] The visual design is unchanged.
 
 ---
 
