@@ -44,17 +44,22 @@ export const getSession = cache(async (): Promise<AppSession | null> => {
   // Every protected page is cookie-based; skip the round trip when signed out.
   if (!cookie) return null;
 
-  const response = await fetch(`${API_URL}/api/auth/get-session`, {
-    headers: { cookie },
-    cache: "no-store",
-  });
+  try {
+    const response = await fetch(`${API_URL}/api/auth/get-session`, {
+      headers: { cookie },
+      cache: "no-store",
+    });
 
-  if (!response.ok) return null;
+    if (!response.ok) return null;
 
-  const data = (await response.json()) as AppSession | null;
+    const data = (await response.json()) as AppSession | null;
 
-  // Better Auth returns `null` (HTTP 200) when the cookie is missing/invalid.
-  return data?.session && data?.user ? data : null;
+    // Better Auth returns `null` (HTTP 200) when the cookie is missing/invalid.
+    return data?.session && data?.user ? data : null;
+  } catch {
+    // Treat an unreachable API as signed out rather than crashing the page.
+    return null;
+  }
 });
 
 export async function requireUser() {

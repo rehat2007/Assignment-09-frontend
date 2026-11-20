@@ -287,26 +287,27 @@ If local Mongo is standalone:
 
 ### Tasks
 
-- [ ] Create `fix_mate_backend` with TypeScript, Express, MongoDB, Better Auth, Zod.
-- [ ] Install backend dependencies.
-- [ ] Copy/adapt `mongo.ts`, `auth.ts`, and `roles.ts`.
-- [ ] Add `config/env.ts` validation.
-- [ ] Mount Better Auth before `express.json()`.
-- [ ] Add CORS with credentials and the exact frontend origin.
-- [ ] Add `GET /api/v1/health` with a Mongo ping.
-- [ ] Move `scripts/create-admin.ts` to the backend and repoint/remove the frontend `auth:admin` script.
-- [ ] Move avatar upload to Express or add a temporary proxy.
-- [ ] Update the sign-up and profile avatar fetches to the Express upload URL.
-- [ ] Update Next `authClient` base URL.
-- [ ] Update Next `authz.ts` to fetch the session from Express.
-- [ ] Remove or proxy `src/app/api/auth/[...all]/route.ts`.
-- [ ] Update Google OAuth callback URL, if Google is enabled.
+- [x] Create `fix_mate_backend` with TypeScript, Express, MongoDB, Better Auth, Zod.
+- [x] Install backend dependencies.
+- [x] Copy/adapt `mongo.ts`, `auth.ts`, and `roles.ts`.
+- [x] Add `config/env.ts` validation.
+- [x] Mount Better Auth before `express.json()`.
+- [x] Add CORS with credentials and the exact frontend origin.
+- [x] Add `GET /api/v1/health` with a Mongo ping.
+- [x] Move `scripts/create-admin.ts` to the backend and repoint/remove the frontend `auth:admin` script.
+- [x] Move avatar upload to Express or add a temporary proxy.
+- [x] Update the sign-up and profile avatar fetches to the Express upload URL.
+- [x] Update Next `authClient` base URL.
+- [x] Update Next `authz.ts` to fetch the session from Express.
+- [x] Remove or proxy `src/app/api/auth/[...all]/route.ts`.
+- [x] Update Google OAuth callback URL, if Google is enabled.
 
 ### Backend dependencies
 
 ```bash
-npm i express cors helmet zod mongodb better-auth @better-auth/mongo-adapter stripe
-npm i -D typescript tsx @types/node @types/express @types/cors
+npm i express cors helmet zod mongodb better-auth @better-auth/mongo-adapter multer dotenv
+npm i -D typescript tsx @types/node @types/express @types/cors @types/multer
+# Phase 7 adds: stripe
 ```
 
 ### Express entrypoint order
@@ -438,14 +439,14 @@ export const getSession = cache(async () => {
 
 ### Acceptance checks
 
-- [ ] `GET http://localhost:4000/api/v1/health` returns `200`.
-- [ ] `POST http://localhost:4000/api/auth/sign-up/email` creates a user.
-- [ ] Next sign-up works.
-- [ ] Next sign-in sets a cookie and redirects to `/dashboard`.
-- [ ] Express `GET /api/auth/get-session` with that cookie returns the user.
-- [ ] Next protected pages still redirect correctly.
-- [ ] Sign-out works.
-- [ ] Existing avatar upload still works after the auth move.
+- [x] `GET http://localhost:4000/api/v1/health` returns `200`.
+- [x] `POST http://localhost:4000/api/auth/sign-up/email` creates a user.
+- [x] Next sign-up works.
+- [x] Next sign-in sets a cookie and redirects to `/dashboard`.
+- [x] Express `GET /api/auth/get-session` with that cookie returns the user.
+- [x] Next protected pages still redirect correctly.
+- [x] Sign-out works.
+- [x] Existing avatar upload still works after the auth move.
 
 ---
 
