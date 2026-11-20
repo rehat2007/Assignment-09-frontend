@@ -11,15 +11,13 @@ import {
   Wrench,
 } from "lucide-react";
 import { CategoryTile } from "@/components/customer/category-tile";
+import { DashboardPageError } from "@/components/dashboard/dashboard-page-error";
 import { requireRole } from "@/lib/authz";
 import { BOOKING_STATUS_COLOR, BOOKING_STATUS_LABEL, formatDate, money } from "@/lib/customer-data";
 import {
-  getApprovalCounts,
-  getTechnicianStats,
-  TECHNICIAN_EARNINGS,
-  TECHNICIAN_REQUESTS,
-  TECHNICIAN_SERVICES,
-} from "@/lib/technician-data";
+  getTechnicianOverview,
+  type TechnicianOverview,
+} from "@/lib/technician-api";
 
 const PIPELINE = [
   "requested",
@@ -29,55 +27,52 @@ const PIPELINE = [
 ] as const;
 
 export default async function TechnicianOverviewPage() {
-  await requireRole(["technician", "admin"]);
+  await requireRole(["technician"]);
 
-  const stats = getTechnicianStats();
-  const approvals = getApprovalCounts();
-  const availableServices = TECHNICIAN_SERVICES.filter(
-    (service) => service.available,
-  ).length;
-  const paidJobs = TECHNICIAN_REQUESTS.filter(
-    (request) => request.paymentStatus === "paid",
-  ).length;
-  const latestRequest = TECHNICIAN_REQUESTS.find(
-    (request) => request.status === "requested",
-  );
-  const topServices = TECHNICIAN_SERVICES.filter(
-    (service) => service.approval === "approved",
-  )
-    .slice()
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 3);
+  let overview: TechnicianOverview;
+
+  try {
+    overview = await getTechnicianOverview();
+  } catch {
+    return (
+      <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
+        <div className="mx-auto max-w-[1264px] px-6 py-8">
+          <DashboardPageError
+            title="We could not load your overview"
+            description="Your listings, requests and earnings could not be loaded. Please try again."
+            retryHref="/dashboard/technician"
+          />
+        </div>
+      </main>
+    );
+  }
+
+  const { stats, pipeline, earnings, topServices, latestRequest } = overview;
+  const counts = pipeline;
   const maxEarning = Math.max(
-    ...TECHNICIAN_EARNINGS.map((month) => month.value),
+    ...earnings.map((month) => month.value),
     1,
   );
-  const counts = TECHNICIAN_REQUESTS.reduce<Record<string, number>>(
-    (result, request) => {
-      result[request.status] = (result[request.status] ?? 0) + 1;
-      return result;
-    },
-    {},
-  );
-  const pipelineTotal = TECHNICIAN_REQUESTS.length;
+  const pipelineTotal = stats.totalRequests;
   const statusTotal =
     PIPELINE.reduce((sum, status) => sum + (counts[status] ?? 0), 0) || 1;
 
-  const gradient = PIPELINE.reduce<{ stops: string[]; cursor: number }>(
-    (result, status) => {
-      const count = counts[status] ?? 0;
-      if (!count) return result;
-      const end = result.cursor + (count / statusTotal) * 100;
-      return {
-        cursor: end,
-        stops: [
-          ...result.stops,
-          `${BOOKING_STATUS_COLOR[status]} ${result.cursor}% ${end}%`,
-        ],
-      };
-    },
-    { stops: [], cursor: 0 },
-  ).stops.join(", ");
+  const gradient =
+    PIPELINE.reduce<{ stops: string[]; cursor: number }>(
+      (result, status) => {
+        const count = counts[status] ?? 0;
+        if (!count) return result;
+        const end = result.cursor + (count / statusTotal) * 100;
+        return {
+          cursor: end,
+          stops: [
+            ...result.stops,
+            `${BOOKING_STATUS_COLOR[status]} ${result.cursor}% ${end}%`,
+          ],
+        };
+      },
+      { stops: [], cursor: 0 },
+    ).stops.join(", ") || "#e5e1d6 0% 100%";
 
   return (
     <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
@@ -119,14 +114,14 @@ export default async function TechnicianOverviewPage() {
           <StatCard
             label="Total services"
             value={String(stats.totalServices)}
-            note={`${availableServices} available now`}
+            note={`${stats.availableServices} available now`}
             icon={<Wrench className="size-4" />}
             tone="mint"
           />
           <StatCard
             label="Approved services"
             value={String(stats.approved)}
-            note={`${approvals.pending} awaiting review`}
+            note={`${stats.pendingServices} awaiting review`}
             icon={<Check className="size-4" />}
             tone="mint"
           />
@@ -140,7 +135,7 @@ export default async function TechnicianOverviewPage() {
           <StatCard
             label="Earnings"
             value={money(stats.earnings)}
-            note={`${paidJobs} paid job${paidJobs === 1 ? "" : "s"}`}
+            note={`${stats.paidJobs} paid job${stats.paidJobs === 1 ? "" : "s"}`}
             icon={<Wallet className="size-4" />}
             tone="mint"
           />
@@ -166,14 +161,15 @@ export default async function TechnicianOverviewPage() {
               </div>
 
               <div className="mt-6 flex h-32 items-end gap-3">
-                {TECHNICIAN_EARNINGS.map((entry) => (
+                {earnings.map((entry) => (
                   <div
                     key={entry.label}
                     className="flex h-full flex-1 flex-col items-center justify-end gap-2"
                   >
                     <div
                       className={`w-full max-w-[32px] rounded-t-[3px] ${
-                        entry.label === "Nov"
+                        entry.label ===
+                        earnings[earnings.length - 1]?.label
                           ? "bg-[#f0bb6a]"
                           : "bg-[#3aa77c] dark:bg-[#23624a]"
                       }`}
@@ -268,7 +264,7 @@ export default async function TechnicianOverviewPage() {
                   Open request manager <ArrowRight className="size-3.5" />
                 </Link>
                 <span className="text-[#87948d]">
-                  {TECHNICIAN_REQUESTS.length} total
+                  {stats.totalRequests} total
                 </span>
               </div>
             </section>
@@ -338,20 +334,20 @@ export default async function TechnicianOverviewPage() {
                 <div className="mt-3 grid gap-2.5">
                   <ProgressRow
                     label="Approved"
-                    value={approvals.approved}
-                    total={TECHNICIAN_SERVICES.length}
+                    value={stats.approved}
+                    total={stats.totalServices}
                     color="#3ddc97"
                   />
                   <ProgressRow
                     label="Pending"
-                    value={approvals.pending}
-                    total={TECHNICIAN_SERVICES.length}
+                    value={stats.pendingServices}
+                    total={stats.totalServices}
                     color="#f0bb6a"
                   />
                   <ProgressRow
                     label="Rejected"
-                    value={approvals.rejected}
-                    total={TECHNICIAN_SERVICES.length}
+                    value={stats.rejectedServices}
+                    total={stats.totalServices}
                     color="#ff8f82"
                   />
                 </div>
@@ -373,7 +369,7 @@ export default async function TechnicianOverviewPage() {
                   href="/dashboard/technician/my-services"
                   className="shrink-0 text-[11.5px] font-semibold text-[#0e6b54] hover:underline dark:text-[#63e6b6]"
                 >
-                  All {TECHNICIAN_SERVICES.length}
+                  All {stats.totalServices}
                 </Link>
               </div>
 
@@ -382,8 +378,8 @@ export default async function TechnicianOverviewPage() {
                   <Link
                     key={service.id}
                     href={
-                      service.serviceId
-                        ? `/services/${service.serviceId}`
+                      service.serviceSlug
+                        ? `/services/${service.serviceSlug}`
                         : "/dashboard/technician/my-services"
                     }
                     className="flex items-center gap-3 py-3"
@@ -404,6 +400,18 @@ export default async function TechnicianOverviewPage() {
                     </span>
                   </Link>
                 ))}
+                {topServices.length === 0 && (
+                  <p className="py-4 text-[11.5px] leading-[1.6] text-[#5f6f68] dark:text-[#9dab9f]">
+                    No approved listings yet.{" "}
+                    <Link
+                      href="/dashboard/technician/add-service"
+                      className="font-semibold text-[#0e6b54] hover:underline dark:text-[#63e6b6]"
+                    >
+                      Add a service
+                    </Link>
+                    .
+                  </p>
+                )}
               </div>
             </section>
           </div>

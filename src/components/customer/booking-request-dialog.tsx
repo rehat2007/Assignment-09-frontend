@@ -115,6 +115,7 @@ export function BookingRequestDialog({
       }
 
       setOpen(false);
+      setPending(false);
       router.push("/dashboard/customer/bookings");
       router.refresh();
     } catch (caught) {

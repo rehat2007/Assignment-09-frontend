@@ -79,12 +79,15 @@ function toPaginationMeta(meta: Record<string, unknown>): PaginationMeta {
 }
 
 export async function getCatalogMeta(): Promise<CatalogMeta> {
-  const { data } = await apiFetch<CatalogMeta>("/api/v1/meta");
+  const { data } = await apiFetch<CatalogMeta>("/api/v1/meta", {
+    tags: ["catalog"],
+  });
   return data;
 }
 
 export async function getServices(params: ListServicesParams = {}) {
   const { data, meta } = await apiFetch<ServiceSummary[]>("/api/v1/services", {
+    tags: ["catalog"],
     searchParams: {
       q: params.q,
       category: params.category,
@@ -107,6 +110,7 @@ export async function getServiceBySlug(
   try {
     const { data } = await apiFetch<ServiceDetail>(
       `/api/v1/services/${encodeURIComponent(slug)}`,
+      { tags: ["catalog"] },
     );
 
     return data;
@@ -129,6 +133,7 @@ export async function getServiceReviews(
   const { data, meta } = await apiFetch<ServiceReview[]>(
     `/api/v1/services/${encodeURIComponent(slug)}/reviews`,
     {
+      tags: ["catalog"],
       searchParams: {
         page: params.page,
         pageSize: params.pageSize,

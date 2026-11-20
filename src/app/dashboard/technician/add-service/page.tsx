@@ -2,7 +2,7 @@ import { AddServiceForm } from "@/components/technician/add-service-form";
 import { requireRole } from "@/lib/authz";
 
 export default async function AddServicePage() {
-  const { session } = await requireRole(["technician", "admin"]);
+  const { session } = await requireRole(["technician"]);
   const user = session.user;
 
   return (

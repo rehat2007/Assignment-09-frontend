@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { cn } from "cn";
 import { StatusBadge } from "@/components/customer/booking-status";
-import { ADMIN_BOOKINGS, ADMIN_STATS, BOOKING_STATUS_COUNTS } from "@/lib/admin-data";
+import { DashboardPageError } from "@/components/dashboard/dashboard-page-error";
+import { getAdminBookings } from "@/lib/admin-api";
 import { requireRole } from "@/lib/authz";
 import {
   type BookingStatus,
@@ -46,15 +47,42 @@ export default async function AdminBookingsPage({
   const rawStatus = Array.isArray(params.status)
     ? params.status[0]
     : params.status;
+
+  const allBookings = await getAdminBookings().catch(() => null);
+
+  if (!allBookings) {
+    return (
+      <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
+        <div className="mx-auto max-w-[1264px] px-6 py-8">
+          <DashboardPageError
+            title="We could not load bookings"
+            description="The platform booking list could not be loaded. Please try again."
+            retryHref="/dashboard/admin/bookings"
+          />
+        </div>
+      </main>
+    );
+  }
+
+  const bookingCounts: Record<string, number> = { all: allBookings.length };
+
+  for (const status of Object.keys(STATUS_RANK) as BookingStatus[]) {
+    bookingCounts[status] = 0;
+  }
+
+  for (const booking of allBookings) {
+    bookingCounts[booking.status] = (bookingCounts[booking.status] ?? 0) + 1;
+  }
+
   const active: BookingStatus | "all" =
-    rawStatus && rawStatus in BOOKING_STATUS_COUNTS
+    rawStatus && rawStatus in bookingCounts
       ? (rawStatus as BookingStatus)
       : "all";
 
   const list = (
     active === "all"
-      ? ADMIN_BOOKINGS
-      : ADMIN_BOOKINGS.filter((booking) => booking.status === active)
+      ? allBookings
+      : allBookings.filter((booking) => booking.status === active)
   )
     .slice()
     .sort(
@@ -62,6 +90,11 @@ export default async function AdminBookingsPage({
         STATUS_RANK[a.status] - STATUS_RANK[b.status] ||
         b.createdAt.localeCompare(a.createdAt),
     );
+
+  const pipelineValue = allBookings.reduce(
+    (total, booking) => total + (booking.finalAmount ?? booking.basePrice),
+    0,
+  );
 
   return (
     <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
@@ -78,7 +111,7 @@ export default async function AdminBookingsPage({
 
           <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-[7px] bg-[#e4f2ec] px-3 py-2 text-[10.5px] font-semibold text-[#0e6b54] dark:bg-[#112c25] dark:text-[#43d3ab]">
             <span className="size-1.5 rounded-full bg-current" />
-            {money(ADMIN_STATS.pipelineValue)} pipeline value
+            {money(pipelineValue)} pipeline value
           </span>
         </div>
 
@@ -104,7 +137,7 @@ export default async function AdminBookingsPage({
                 >
                   {item.label}
                   <span className="text-[10px] opacity-60">
-                    {BOOKING_STATUS_COUNTS[item.key]}
+                    {bookingCounts[item.key]}
                   </span>
                 </Link>
               );
@@ -138,7 +171,7 @@ export default async function AdminBookingsPage({
                         {booking.title}
                       </p>
                       <p className="mt-0.5 text-[10px] text-[#87948d]">
-                        #{booking.id.toUpperCase()} · {booking.category}
+                        #{booking.bookingNumber ?? booking.id.toUpperCase()} · {booking.category}
                       </p>
                     </td>
                     <td className="px-3 py-4">
@@ -176,7 +209,7 @@ export default async function AdminBookingsPage({
                     <td className="px-5 py-4 text-right font-semibold text-[#0f1a15] dark:text-white">
                       {money(
                         booking.status === "completed"
-                          ? booking.finalAmount
+                          ? (booking.finalAmount ?? booking.basePrice)
                           : booking.basePrice,
                       )}
                     </td>
@@ -195,13 +228,13 @@ export default async function AdminBookingsPage({
                       {booking.title}
                     </p>
                     <p className="mt-0.5 text-[10px] text-[#87948d]">
-                      #{booking.id.toUpperCase()} · {booking.category}
+                      #{booking.bookingNumber ?? booking.id.toUpperCase()} · {booking.category}
                     </p>
                   </div>
                   <p className="shrink-0 text-[12px] font-bold text-[#0f1a15] dark:text-white">
                     {money(
                       booking.status === "completed"
-                        ? booking.finalAmount
+                        ? (booking.finalAmount ?? booking.basePrice)
                         : booking.basePrice,
                     )}
                   </p>

@@ -2,14 +2,18 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import { CategoryTile } from "@/components/customer/category-tile";
+import { EditServiceDialog } from "@/components/technician/edit-service-dialog";
+import { revalidateCatalog } from "@/app/actions";
 import { formatDate, money } from "@/lib/customer-data";
 import {
   type TechnicianApproval,
   type TechnicianService,
 } from "@/lib/technician-data";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const FILTERS: Array<{ key: TechnicianApproval | "all"; label: string }> = [
   { key: "all", label: "All" },
@@ -35,6 +39,8 @@ export function TechnicianServices({
   const [services, setServices] = useState(initialServices);
   const [filter, setFilter] = useState<TechnicianApproval | "all">("all");
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   const counts = useMemo(
     () =>
@@ -61,20 +67,117 @@ export function TechnicianServices({
   const pending = counts.pending ?? 0;
   const availableCount = services.filter((service) => service.available).length;
 
-  function toggleAvailability(id: string) {
+  function handleSaved(updated: TechnicianService) {
     setServices((current) =>
       current.map((service) =>
-        service.id === id
-          ? { ...service, available: !service.available }
-          : service,
+        service.id === updated.id ? updated : service,
       ),
     );
+    setNotice(
+      "Listing updated. Approved or rejected listings return to pending review.",
+    );
+    setError("");
+    void revalidateCatalog();
   }
 
-  function removeService(id: string) {
-    if (!window.confirm("Remove this listing from the preview?")) return;
-    setServices((current) => current.filter((service) => service.id !== id));
-    setNotice("Listing removed in this preview. Connect the listings API to persist it.");
+  async function toggleAvailability(service: TechnicianService) {
+    if (pendingId) return;
+
+    setPendingId(service.id);
+    setNotice("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/technician/services/${service.id}/availability`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ available: !service.available }),
+        },
+      );
+      const body = (await response.json().catch(() => null)) as
+        | {
+            data?: TechnicianService;
+            error?: { message?: string };
+          }
+        | null;
+
+      if (!response.ok || !body?.data) {
+        throw new Error(
+          body?.error?.message ?? "Could not update availability.",
+        );
+      }
+
+      const updated = body.data;
+      setServices((current) =>
+        current.map((item) => (item.id === service.id ? updated : item)),
+      );
+      setNotice(
+        updated.available
+          ? "Listing is live in the marketplace."
+          : "Listing paused and hidden from the public catalog.",
+      );
+      void revalidateCatalog();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not update availability.",
+      );
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function removeService(service: TechnicianService) {
+    if (
+      !window.confirm(
+        "Remove this listing? It will be hidden from the marketplace.",
+      )
+    ) {
+      return;
+    }
+
+    if (pendingId) return;
+
+    setPendingId(service.id);
+    setNotice("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/technician/services/${service.id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as
+          | { error?: { message?: string } }
+          | null;
+        throw new Error(
+          body?.error?.message ?? "Could not remove this listing.",
+        );
+      }
+
+      setServices((current) =>
+        current.filter((item) => item.id !== service.id),
+      );
+      setNotice("Listing removed from the marketplace.");
+      void revalidateCatalog();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not remove this listing.",
+      );
+    } finally {
+      setPendingId(null);
+    }
   }
 
   return (
@@ -97,6 +200,16 @@ export function TechnicianServices({
           Add service
         </Link>
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          className="mt-4 flex items-start gap-2 rounded-[9px] border border-[#b42318]/20 bg-[#fcecea] px-3 py-2.5 text-[11.5px] text-[#b42318] dark:border-[#ff8f82]/20 dark:bg-[#2e1613] dark:text-[#ff8f82]"
+        >
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          {error}
+        </p>
+      )}
 
       {notice && (
         <p
@@ -161,7 +274,7 @@ export function TechnicianServices({
                           {service.title}
                         </p>
                         <p className="mt-0.5 text-[10px] text-[#87948d]">
-                          {service.category} · #{service.id.toUpperCase()}
+                          {service.category} · #{service.serviceSlug ?? service.id.toUpperCase()}
                         </p>
                       </div>
                     </div>
@@ -194,12 +307,13 @@ export function TechnicianServices({
                     <div className="flex items-center gap-2 whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => toggleAvailability(service.id)}
+                        onClick={() => toggleAvailability(service)}
                         role="switch"
                         aria-checked={service.available}
                         aria-label={`Toggle availability for ${service.title}`}
+                        disabled={pendingId === service.id}
                         className={cn(
-                          "relative h-5 w-9 rounded-full transition-colors",
+                          "relative h-5 w-9 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60",
                           service.available
                             ? "bg-[#0e6b54] dark:bg-[#63e6b6]"
                             : "bg-[#d2ccbc] dark:bg-white/20",
@@ -224,21 +338,16 @@ export function TechnicianServices({
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <EditServiceDialog
+                        service={service}
+                        onSaved={handleSaved}
+                      />
                       <button
                         type="button"
-                        onClick={() =>
-                          setNotice("The edit form is next; this preview only covers the listing table.")
-                        }
-                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#0e6b54] hover:underline dark:text-[#63e6b6]"
-                      >
-                        <Pencil className="size-3.5" />
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeService(service.id)}
+                        onClick={() => removeService(service)}
+                        disabled={pendingId === service.id}
                         aria-label={`Delete ${service.title}`}
-                        className="text-[#b42318] hover:opacity-70 dark:text-[#ff8f82]"
+                        className="text-[#b42318] hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#ff8f82]"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
@@ -260,7 +369,7 @@ export function TechnicianServices({
                     {service.title}
                   </p>
                   <p className="mt-0.5 text-[10px] text-[#87948d]">
-                    {service.category} · #{service.id.toUpperCase()} ·{" "}
+                    {service.category} · #{service.serviceSlug ?? service.id.toUpperCase()} ·{" "}
                     {formatDate(service.createdAt)}
                   </p>
                 </div>
@@ -281,25 +390,21 @@ export function TechnicianServices({
                 </span>
                 <button
                   type="button"
-                  onClick={() => toggleAvailability(service.id)}
-                  className="inline-flex items-center gap-1.5 rounded-[6px] border border-[#e5e1d6] px-2 py-1 text-[10px] text-[#5f6f68] dark:border-white/10 dark:text-[#9dab9f]"
+                  onClick={() => toggleAvailability(service)}
+                  disabled={pendingId === service.id}
+                  className="inline-flex items-center gap-1.5 rounded-[6px] border border-[#e5e1d6] px-2 py-1 text-[10px] text-[#5f6f68] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-[#9dab9f]"
                 >
                   {service.available ? "Live" : "Off"}
                 </button>
+                <span className="ml-auto">
+                  <EditServiceDialog service={service} onSaved={handleSaved} />
+                </span>
                 <button
                   type="button"
-                  onClick={() =>
-                    setNotice("The edit form is next; this preview only covers the listing table.")
-                  }
-                  className="ml-auto text-[10.5px] font-semibold text-[#0e6b54] dark:text-[#63e6b6]"
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeService(service.id)}
+                  onClick={() => removeService(service)}
+                  disabled={pendingId === service.id}
                   aria-label={`Delete ${service.title}`}
-                  className="text-[#b42318] dark:text-[#ff8f82]"
+                  className="text-[#b42318] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#ff8f82]"
                 >
                   <Trash2 className="size-3.5" />
                 </button>

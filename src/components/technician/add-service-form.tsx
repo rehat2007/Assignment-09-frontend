@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Briefcase,
@@ -19,6 +20,8 @@ import { TECHNICIAN_PREVIEW } from "@/lib/technician-data";
 
 const INPUT =
   "mt-1.5 h-11 w-full rounded-[9px] border border-[#e5e1d6] bg-white px-3.5 text-[12.5px] text-[#0f1a15] outline-none transition placeholder:text-[#87948d] focus:border-[#0e6b54] focus:ring-[3px] focus:ring-[#0e6b54]/10 dark:border-[#263a30] dark:bg-[#0b1510] dark:text-white dark:placeholder:text-[#6f8579] dark:focus:border-[#43d3ab]";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const TIPS = [
   ["Use a real cover photo", "Show the device or your workspace, not a stock logo."],
@@ -40,8 +43,9 @@ export function AddServiceForm({
   const [area, setArea] = useState(user.area ?? "");
   const [mode, setMode] = useState<"Home Visit" | "Shop Drop-off">("Home Visit");
   const [cover, setCover] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const blobUrl = useRef<string | null>(null);
 
@@ -75,10 +79,11 @@ export function AddServiceForm({
     setError("");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
+
     setError("");
-    setSubmitted(false);
 
     if (title.trim().length < 6) {
       setError("Give the service a clear title of at least 6 characters.");
@@ -105,7 +110,49 @@ export function AddServiceForm({
       return;
     }
 
-    setSubmitted(true);
+    setPending(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/v1/technician/services`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          category,
+          description: description.trim(),
+          location: area.trim(),
+          duration: duration.trim(),
+          price: Number(price),
+          mode,
+          includes: [],
+        }),
+      });
+
+      const body = (await response.json().catch(() => null)) as
+        | {
+            data?: { id?: string };
+            error?: { message?: string };
+          }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(
+          body?.error?.message ?? "Could not submit this listing.",
+        );
+      }
+
+      setPending(false);
+      router.push("/dashboard/technician/my-services");
+      router.refresh();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not submit this listing.",
+      );
+      setPending(false);
+    }
   }
 
   return (
@@ -158,15 +205,6 @@ export function AddServiceForm({
                 className="rounded-[9px] border border-[#b42318]/20 bg-[#fcecea] px-3 py-2.5 text-[11.5px] text-[#b42318] dark:border-[#ff8f82]/20 dark:bg-[#2e1613] dark:text-[#ff8f82]"
               >
                 {error}
-              </p>
-            )}
-            {submitted && (
-              <p
-                role="status"
-                className="rounded-[9px] border border-[#0e6b54]/20 bg-[#e4f2ec] px-3 py-2.5 text-[11.5px] text-[#0e6b54] dark:border-[#43d3ab]/20 dark:bg-[#112c25] dark:text-[#43d3ab]"
-              >
-                Preview submitted for review. Connect the listings collection to
-                make this permanent.
               </p>
             )}
 
@@ -358,6 +396,10 @@ export function AddServiceForm({
                 <Sparkles className="size-3.5" />
                 Use a sample cover
               </button>
+              <p className="mt-2 text-[10px] text-[#87948d]">
+                Cover uploads are not saved yet; your listing will use FixMate
+                category art for now.
+              </p>
             </div>
 
             <p className="flex items-start gap-2 rounded-[9px] bg-[#eef1ff] px-3 py-2.5 text-[11px] leading-[1.55] text-[#3730a3] dark:bg-[#151a3a] dark:text-[#a9a4ff]">
@@ -379,10 +421,11 @@ export function AddServiceForm({
             </Link>
             <button
               type="submit"
-              className="inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[#0e6b54] px-4 text-[11.5px] font-semibold text-white transition hover:bg-[#0a5342] dark:bg-[#63e6b6] dark:text-[#06231b] dark:hover:bg-[#7cf0c6]"
+              disabled={pending}
+              className="inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[#0e6b54] px-4 text-[11.5px] font-semibold text-white transition hover:bg-[#0a5342] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#63e6b6] dark:text-[#06231b] dark:hover:bg-[#7cf0c6]"
             >
               <Check className="size-3.5" />
-              Submit for approval
+              {pending ? "Submitting…" : "Submit for approval"}
             </button>
           </div>
         </form>

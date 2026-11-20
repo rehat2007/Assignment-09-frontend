@@ -18,6 +18,8 @@ type ApiErrorBody = {
 type ApiFetchOptions = {
   /** ISR window for public data. Ignored when cookies or `cache` are used. */
   revalidate?: number;
+  /** Cache tags that can be invalidated after catalog mutations. */
+  tags?: string[];
   /** Forward the browser cookie and opt out of caching. */
   withCookies?: boolean;
   cache?: RequestCache;
@@ -54,7 +56,9 @@ export async function apiFetch<T>(
     ? ((await headers()).get("cookie") ?? "")
     : "";
 
-  const init: RequestInit & { next?: { revalidate?: number } } = {};
+  const init: RequestInit & {
+    next?: { revalidate?: number; tags?: string[] };
+  } = {};
 
   if (cookie) {
     init.headers = { cookie };
@@ -65,7 +69,10 @@ export async function apiFetch<T>(
   } else if (options.withCookies) {
     init.cache = "no-store";
   } else {
-    init.next = { revalidate: options.revalidate ?? 60 };
+    init.next = {
+      revalidate: options.revalidate ?? 60,
+      ...(options.tags ? { tags: options.tags } : {}),
+    };
   }
 
   const response = await fetch(url, init);

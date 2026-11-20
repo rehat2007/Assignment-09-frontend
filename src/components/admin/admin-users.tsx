@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Ban, Eye, Lock, RotateCcw, Search, X } from "lucide-react";
+import { AlertTriangle, Ban, Eye, Lock, RotateCcw, Search, X } from "lucide-react";
 import { cn } from "cn";
 import type { AdminRole, AdminUser } from "@/lib/admin-data";
 import { formatDate } from "@/lib/customer-data";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const ROLE_LABEL: Record<AdminRole, string> = {
   customer: "Customer",
@@ -31,9 +33,10 @@ export function AdminUsers({
   const [users, setUsers] = useState(initialUsers);
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<AdminRole | "all">("all");
-  const [suspended, setSuspended] = useState<string[]>([]);
   const [selected, setSelected] = useState<AdminUser | null>(null);
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -47,25 +50,106 @@ export function AdminUsers({
     });
   }, [users, query, roleFilter]);
 
-  function changeRole(id: string, role: AdminRole) {
-    setUsers((current) =>
-      current.map((user) => (user.id === id ? { ...user, role } : user)),
-    );
-    setNotice("Role changes are preview-only until the users collection is connected.");
+  async function changeRole(
+    id: string,
+    role: "customer" | "technician",
+  ) {
+    if (pendingId) return;
+
+    setPendingId(id);
+    setNotice("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/users/${id}/role`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role }),
+        },
+      );
+      const body = (await response.json().catch(() => null)) as
+        | { data?: AdminUser; error?: { message?: string } }
+        | null;
+
+      if (!response.ok || !body?.data) {
+        throw new Error(body?.error?.message ?? "Could not change this role.");
+      }
+
+      const updated = body.data;
+      setUsers((current) =>
+        current.map((user) => (user.id === id ? updated : user)),
+      );
+      setSelected((current) => (current?.id === id ? updated : current));
+      setNotice(`${updated.name} is now ${ROLE_LABEL[updated.role]}.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not change this role.",
+      );
+    } finally {
+      setPendingId(null);
+    }
   }
 
-  function toggleSuspend(user: AdminUser) {
-    const isSuspended = suspended.includes(user.id);
-    setSuspended((current) =>
-      isSuspended
-        ? current.filter((id) => id !== user.id)
-        : [...current, user.id],
-    );
-    setNotice(
-      isSuspended
-        ? `${user.name} restored in this preview.`
-        : `${user.name} suspended in this preview. No email was sent.`,
-    );
+  async function toggleSuspend(user: AdminUser) {
+    if (pendingId) return;
+
+    const isSuspended = Boolean(user.banned);
+    setPendingId(user.id);
+    setNotice("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/users/${user.id}/${
+          isSuspended ? "restore" : "suspend"
+        }`,
+        {
+          method: "POST",
+          credentials: "include",
+          ...(isSuspended
+            ? {}
+            : {
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reason: "Suspended by admin" }),
+              }),
+        },
+      );
+      const body = (await response.json().catch(() => null)) as
+        | { data?: AdminUser; error?: { message?: string } }
+        | null;
+
+      if (!response.ok || !body?.data) {
+        throw new Error(
+          body?.error?.message ?? "Could not update this account.",
+        );
+      }
+
+      const updated = body.data;
+      setUsers((current) =>
+        current.map((item) => (item.id === user.id ? updated : item)),
+      );
+      setSelected((current) =>
+        current?.id === user.id ? updated : current,
+      );
+      setNotice(
+        isSuspended
+          ? `${user.name} restored.`
+          : `${user.name} suspended.`,
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not update this account.",
+      );
+    } finally {
+      setPendingId(null);
+    }
   }
 
   return (
@@ -85,6 +169,16 @@ export function AdminUsers({
           {users.length} accounts
         </span>
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          className="mt-4 flex items-start gap-2 rounded-[9px] border border-[#b42318]/20 bg-[#fcecea] px-3 py-2.5 text-[11.5px] text-[#b42318] dark:border-[#ff8f82]/20 dark:bg-[#2e1613] dark:text-[#ff8f82]"
+        >
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          {error}
+        </p>
+      )}
 
       {notice && (
         <p
@@ -142,7 +236,7 @@ export function AdminUsers({
             <tbody className="divide-y divide-[#e5e1d6] dark:divide-white/[0.07]">
               {filtered.map((user, index) => {
                 const isSelf = user.email === currentEmail;
-                const isSuspended = suspended.includes(user.id);
+                const isSuspended = Boolean(user.banned);
 
                 return (
                   <tr key={user.id} className="text-[11.5px]">
@@ -174,19 +268,21 @@ export function AdminUsers({
                     <td className="px-3 py-4">
                       <select
                         value={user.role}
-                        onChange={(event) =>
-                          changeRole(
-                            user.id,
-                            event.target.value as AdminRole,
-                          )
-                        }
-                        disabled={isSelf}
+                        onChange={(event) => {
+                          const next = event.target.value;
+                          if (next === "customer" || next === "technician") {
+                            changeRole(user.id, next);
+                          }
+                        }}
+                        disabled={isSelf || pendingId === user.id}
                         aria-label={`Role for ${user.name}`}
-                        className="h-8 rounded-[7px] border border-[#e5e1d6] bg-white px-2 text-[10.5px] font-medium text-[#27352f] outline-none disabled:opacity-70 dark:border-white/15 dark:bg-[#101a16] dark:text-white"
+                        className="h-8 rounded-[7px] border border-[#e5e1d6] bg-white px-2 text-[10.5px] font-medium text-[#27352f] outline-none disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/15 dark:bg-[#101a16] dark:text-white"
                       >
                         <option value="customer">Customer</option>
                         <option value="technician">Technician</option>
-                        <option value="admin">Admin</option>
+                        <option value="admin" disabled>
+                          Admin
+                        </option>
                       </select>
                       {isSelf && (
                         <p className="mt-1 text-[9.5px] text-[#87948d]">
@@ -224,8 +320,9 @@ export function AdminUsers({
                           <button
                             type="button"
                             onClick={() => toggleSuspend(user)}
+                            disabled={pendingId === user.id}
                             className={cn(
-                              "inline-flex items-center gap-1.5 text-[11px] font-semibold",
+                              "inline-flex items-center gap-1.5 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-60",
                               isSuspended
                                 ? "text-[#0e6b54] dark:text-[#63e6b6]"
                                 : "text-[#b42318] dark:text-[#ff8f82]",
@@ -251,7 +348,7 @@ export function AdminUsers({
         <div className="divide-y divide-[#e5e1d6] md:hidden dark:divide-white/[0.07]">
           {filtered.map((user, index) => {
             const isSelf = user.email === currentEmail;
-            const isSuspended = suspended.includes(user.id);
+            const isSuspended = Boolean(user.banned);
 
             return (
               <div key={user.id} className="p-4">
@@ -284,16 +381,21 @@ export function AdminUsers({
                     <p className="text-[#87948d]">Role</p>
                     <select
                       value={user.role}
-                      onChange={(event) =>
-                        changeRole(user.id, event.target.value as AdminRole)
-                      }
-                      disabled={isSelf}
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        if (next === "customer" || next === "technician") {
+                          changeRole(user.id, next);
+                        }
+                      }}
+                      disabled={isSelf || pendingId === user.id}
                       aria-label={`Role for ${user.name}`}
-                      className="mt-1 h-8 w-full rounded-[7px] border border-[#e5e1d6] bg-white px-2 text-[10.5px] font-medium text-[#27352f] dark:border-white/15 dark:bg-[#101a16] dark:text-white"
+                      className="mt-1 h-8 w-full rounded-[7px] border border-[#e5e1d6] bg-white px-2 text-[10.5px] font-medium text-[#27352f] disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/15 dark:bg-[#101a16] dark:text-white"
                     >
                       <option value="customer">Customer</option>
                       <option value="technician">Technician</option>
-                      <option value="admin">Admin</option>
+                      <option value="admin" disabled>
+                        Admin
+                      </option>
                     </select>
                   </div>
                   <div>
@@ -331,8 +433,9 @@ export function AdminUsers({
                     <button
                       type="button"
                       onClick={() => toggleSuspend(user)}
+                      disabled={pendingId === user.id}
                       className={cn(
-                        "ml-auto inline-flex items-center gap-1.5 text-[11px] font-semibold",
+                        "ml-auto inline-flex items-center gap-1.5 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-60",
                         isSuspended
                           ? "text-[#0e6b54] dark:text-[#63e6b6]"
                           : "text-[#b42318] dark:text-[#ff8f82]",
@@ -402,6 +505,10 @@ export function AdminUsers({
 
             <dl className="mt-4 grid gap-2.5 border-y border-[#e5e1d6] py-4 text-[11.5px] dark:border-white/[0.08]">
               <Detail label="Role" value={ROLE_LABEL[selected.role]} />
+              <Detail
+                label="Status"
+                value={selected.banned ? "Suspended" : "Active"}
+              />
               <Detail label="Area" value={selected.area} />
               <Detail label="Phone" value={selected.phone} />
               <Detail label="Joined" value={formatDate(selected.joined)} />

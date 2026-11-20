@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { BookingTimeline, StatusBadge } from "@/components/customer/booking-status";
 import { CategoryTile } from "@/components/customer/category-tile";
-import { CustomerPageError } from "@/components/customer/customer-page-error";
+import { DashboardPageError } from "@/components/dashboard/dashboard-page-error";
 import { requireRole } from "@/lib/authz";
 import { getServices, type ServiceSummary } from "@/lib/catalog";
 import {
@@ -57,7 +57,7 @@ export default async function CustomerOverviewPage() {
     return (
       <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
         <div className="mx-auto max-w-[1264px] px-6 py-8">
-          <CustomerPageError
+          <DashboardPageError
             title="We could not load your dashboard"
             description="Your bookings and payment summary could not be loaded. Please try again."
             retryHref="/dashboard/customer"

@@ -6,30 +6,46 @@ export type TechnicianApproval = "approved" | "pending" | "rejected";
 export type TechnicianService = {
   id: string;
   serviceId?: string;
+  serviceSlug?: string;
   title: string;
   category: ServiceCategory;
+  description?: string;
+  location?: string;
   price: number;
   duration: string;
+  mode?: "Home Visit" | "Shop Drop-off";
   approval: TechnicianApproval;
+  rejectionReason?: string;
   available: boolean;
   createdAt: string;
+  updatedAt?: string;
   rating: number;
   reviews: number;
+  includes?: string[];
+  warranty?: string;
+  availabilityNote?: string;
+  coverImage?: string | null;
 };
 
 export type TechnicianRequest = {
   id: string;
+  bookingNumber?: string;
   serviceId: string;
+  serviceSlug?: string;
   serviceTitle: string;
   category: ServiceCategory;
   customer: string;
-  phone: string;
-  address: string;
+  phone: string | null;
+  address: string | null;
   preferredDate: string;
   problem: string;
   status: BookingStatus;
   amount: number;
+  basePrice?: number;
+  finalAmount?: number | null;
   paymentStatus: "paid" | "unpaid";
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 /* Preview data for the technician dashboard. Replace with MongoDB

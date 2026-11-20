@@ -1,5 +1,5 @@
 import { CustomerBookings } from "@/components/customer/customer-bookings";
-import { CustomerPageError } from "@/components/customer/customer-page-error";
+import { DashboardPageError } from "@/components/dashboard/dashboard-page-error";
 import { requireRole } from "@/lib/authz";
 import { getCustomerBookings } from "@/lib/customer-api";
 
@@ -14,7 +14,7 @@ export default async function CustomerBookingsPage() {
         {bookings ? (
           <CustomerBookings initialBookings={bookings} />
         ) : (
-          <CustomerPageError
+          <DashboardPageError
             title="We could not load your bookings"
             description="Your booking list could not be loaded. Please try again."
             retryHref="/dashboard/customer/bookings"

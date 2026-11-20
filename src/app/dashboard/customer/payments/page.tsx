@@ -1,5 +1,5 @@
 import { CustomerPayments } from "@/components/customer/customer-payments";
-import { CustomerPageError } from "@/components/customer/customer-page-error";
+import { DashboardPageError } from "@/components/dashboard/dashboard-page-error";
 import { requireRole } from "@/lib/authz";
 import { getCustomerPayments } from "@/lib/customer-api";
 
@@ -14,7 +14,7 @@ export default async function CustomerPaymentsPage() {
         {payments ? (
           <CustomerPayments payments={payments} />
         ) : (
-          <CustomerPageError
+          <DashboardPageError
             title="We could not load your payments"
             description="Your payment history could not be loaded. Please try again."
             retryHref="/dashboard/customer/payments"

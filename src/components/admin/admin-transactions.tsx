@@ -121,7 +121,8 @@ export function AdminTransactions({
         <button
           type="button"
           onClick={exportCsv}
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#d2ccbc] bg-white px-4 text-[12.5px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-white/15 dark:bg-[#101a16] dark:text-white dark:hover:bg-white/[0.04]"
+          disabled={payments.length === 0}
+          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#d2ccbc] bg-white px-4 text-[12.5px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:bg-[#101a16] dark:text-white dark:hover:bg-white/[0.04]"
         >
           <Download className="size-4" />
           Export CSV
@@ -173,9 +174,22 @@ export function AdminTransactions({
           </div>
           <span className="inline-flex w-fit items-center gap-1.5 rounded-[6px] bg-[#e4f2ec] px-2.5 py-1.5 text-[10px] font-semibold text-[#0e6b54] dark:bg-[#112c25] dark:text-[#43d3ab]">
             <span className="size-1.5 rounded-full bg-current" />
-            Stripe test mode
+            Checkout coming soon
           </span>
         </div>
+
+        {payments.length === 0 && (
+          <div className="px-5 py-10 text-center">
+            <Receipt className="mx-auto size-8 text-[#87948d]" />
+            <p className="mt-3 font-heading text-[15px] font-bold text-[#0f1a15] dark:text-white">
+              No transactions yet
+            </p>
+            <p className="mx-auto mt-2 max-w-[44ch] text-[12px] leading-[1.6] text-[#5f6f68] dark:text-[#9dab9f]">
+              Payments appear here after Stripe checkout is connected and a
+              completed repair is paid.
+            </p>
+          </div>
+        )}
 
         <div className="hidden overflow-x-auto lg:block">
           <table className="w-full min-w-[980px] text-left">
@@ -220,7 +234,7 @@ export function AdminTransactions({
                       {payment.title}
                     </p>
                     <p className="mt-0.5 text-[10px] text-[#87948d]">
-                      #{payment.bookingId.toUpperCase()}
+                      #{payment.bookingNumber ?? payment.bookingId.toUpperCase()}
                     </p>
                   </td>
                   <td className="px-3 py-4 text-[#5f6f68] dark:text-[#9dab9f]">
@@ -279,7 +293,7 @@ export function AdminTransactions({
                   {payment.title}
                 </p>
                 <p className="mt-0.5 text-[10px] text-[#87948d]">
-                  #{payment.bookingId.toUpperCase()} · {payment.technician} ·{" "}
+                  #{payment.bookingNumber ?? payment.bookingId.toUpperCase()} · {payment.technician} ·{" "}
                   {formatDate(payment.paidAt)}
                 </p>
               </div>
@@ -304,7 +318,7 @@ export function AdminTransactions({
         <div className="flex flex-col gap-2 border-t border-[#e5e1d6] px-5 py-3 text-[10px] text-[#87948d] sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.08]">
           <span className="flex items-center gap-1.5">
             <ShieldCheck className="size-3.5" />
-            Verified via Stripe session · bookingId is unique per payment
+            Stripe checkout is not connected yet.
           </span>
           <span>Total {money(total)}</span>
         </div>
@@ -340,7 +354,7 @@ export function AdminTransactions({
             <dl className="mt-4 grid gap-2.5 border-y border-[#e5e1d6] py-4 text-[11.5px] dark:border-white/[0.08]">
               <Row
                 label="Booking"
-                value={`#${invoice.bookingId.toUpperCase()}`}
+                value={`#${invoice.bookingNumber ?? invoice.bookingId.toUpperCase()}`}
               />
               <Row label="Customer" value={invoice.customer} />
               <Row label="Technician" value={invoice.technician} />

@@ -687,20 +687,20 @@ The customer “Pay now” button no longer writes `paymentStatus` locally; it s
 
 ### Endpoints
 
-- [ ] `GET /api/v1/technician/overview`
-- [ ] `GET /api/v1/technician/services`
-- [ ] `POST /api/v1/technician/services`
-- [ ] `GET /api/v1/technician/services/:id`
-- [ ] `PATCH /api/v1/technician/services/:id`
-- [ ] `DELETE /api/v1/technician/services/:id`
-- [ ] `PATCH /api/v1/technician/services/:id/availability`
-- [ ] `GET /api/v1/technician/requests`
-- [ ] `GET /api/v1/technician/requests/:id`
-- [ ] `POST /api/v1/technician/requests/:id/accept`
-- [ ] `POST /api/v1/technician/requests/:id/reject`
-- [ ] `POST /api/v1/technician/requests/:id/start`
-- [ ] `POST /api/v1/technician/requests/:id/complete`
-- [ ] `GET /api/v1/technician/earnings` (P1)
+- [x] `GET /api/v1/technician/overview`
+- [x] `GET /api/v1/technician/services`
+- [x] `POST /api/v1/technician/services`
+- [x] `GET /api/v1/technician/services/:id`
+- [x] `PATCH /api/v1/technician/services/:id`
+- [x] `DELETE /api/v1/technician/services/:id`
+- [x] `PATCH /api/v1/technician/services/:id/availability`
+- [x] `GET /api/v1/technician/requests`
+- [x] `GET /api/v1/technician/requests/:id`
+- [x] `POST /api/v1/technician/requests/:id/accept`
+- [x] `POST /api/v1/technician/requests/:id/reject`
+- [x] `POST /api/v1/technician/requests/:id/start`
+- [x] `POST /api/v1/technician/requests/:id/complete`
+- [ ] `GET /api/v1/technician/earnings` (P1) *(Deferred; the overview already shows paid earnings.)*
 
 ### Rules
 
@@ -715,19 +715,21 @@ The customer “Pay now” button no longer writes `paymentStatus` locally; it s
 
 ### Frontend changes
 
-- [ ] Wire `AddServiceForm` submit to `POST`.
-- [ ] Add the missing edit-service form and wire `PATCH`.
-- [ ] Wire availability toggle.
-- [ ] Wire delete.
-- [ ] Replace `TechnicianRequests` local status changes with API calls.
-- [ ] Replace the completion `window.prompt` with a proper modal if possible.
+- [x] Wire `AddServiceForm` submit to `POST`.
+- [x] Add the missing edit-service form and wire `PATCH`.
+- [x] Wire availability toggle.
+- [x] Wire delete.
+- [x] Replace `TechnicianRequests` local status changes with API calls.
+- [x] Replace the completion `window.prompt` with a proper modal if possible.
+
+Cover uploads stay preview-only until Phase 8; new listings store `coverImage: null` and use category art. The technician sidebar counts in `dashboard-shell.tsx` still come from preview arrays until Phase 6. Requested bookings hide customer phone/address until the technician accepts.
 
 ### Acceptance checks
 
-- [ ] A technician cannot modify another technician's listing or booking.
-- [ ] Approved service edit removes it from public view until re-approved.
-- [ ] Booking state transitions are enforced server-side.
-- [ ] Completion stores the final amount exactly once.
+- [x] A technician cannot modify another technician's listing or booking.
+- [x] Approved service edit removes it from public view until re-approved.
+- [x] Booking state transitions are enforced server-side.
+- [x] Completion stores the final amount exactly once.
 
 ---
 
@@ -737,23 +739,23 @@ The customer “Pay now” button no longer writes `paymentStatus` locally; it s
 
 ### Endpoints
 
-- [ ] `GET /api/v1/admin/overview`
-- [ ] `GET /api/v1/admin/users`
-- [ ] `GET /api/v1/admin/users/:id`
-- [ ] `PATCH /api/v1/admin/users/:id/role`
-- [ ] `POST /api/v1/admin/users/:id/suspend`
-- [ ] `POST /api/v1/admin/users/:id/restore`
-- [ ] `GET /api/v1/admin/services`
-- [ ] `GET /api/v1/admin/services/:id`
-- [ ] `POST /api/v1/admin/services/:id/approve`
-- [ ] `POST /api/v1/admin/services/:id/reject`
-- [ ] `GET /api/v1/admin/bookings`
-- [ ] `GET /api/v1/admin/bookings/:id`
-- [ ] `GET /api/v1/admin/payments`
-- [ ] `GET /api/v1/admin/payments/:id`
-- [ ] `POST /api/v1/admin/users/:id/verify-technician` (P1)
-- [ ] `GET /api/v1/admin/exports/:dataset` (P1)
-- [ ] `GET /api/v1/admin/audit-logs` (P2)
+- [x] `GET /api/v1/admin/overview`
+- [x] `GET /api/v1/admin/users`
+- [x] `GET /api/v1/admin/users/:id`
+- [x] `PATCH /api/v1/admin/users/:id/role`
+- [x] `POST /api/v1/admin/users/:id/suspend`
+- [x] `POST /api/v1/admin/users/:id/restore`
+- [x] `GET /api/v1/admin/services`
+- [x] `GET /api/v1/admin/services/:id`
+- [x] `POST /api/v1/admin/services/:id/approve`
+- [x] `POST /api/v1/admin/services/:id/reject`
+- [x] `GET /api/v1/admin/bookings`
+- [x] `GET /api/v1/admin/bookings/:id`
+- [x] `GET /api/v1/admin/payments`
+- [x] `GET /api/v1/admin/payments/:id`
+- [ ] `POST /api/v1/admin/users/:id/verify-technician` (P1) *(Deferred.)*
+- [ ] `GET /api/v1/admin/exports/:dataset` (P1) *(Deferred; client-side CSV export still works for loaded data.)*
+- [ ] `GET /api/v1/admin/audit-logs` (P2) *(Audit entries are written to the `auditLogs` collection; the read endpoint is deferred.)*
 
 ### Rules
 
@@ -768,18 +770,20 @@ The customer “Pay now” button no longer writes `paymentStatus` locally; it s
 
 ### Frontend changes
 
-- [ ] Replace `admin-users.tsx` local role/suspend state.
-- [ ] Replace `admin-service-approval.tsx` local approval state.
-- [ ] Replace `admin-transactions.tsx` props with API data.
-- [ ] Pass real sidebar counts from the dashboard layout instead of importing preview arrays in `dashboard-shell.tsx`.
+- [x] Replace `admin-users.tsx` local role/suspend state.
+- [x] Replace `admin-service-approval.tsx` local approval state.
+- [x] Replace `admin-transactions.tsx` props with API data.
+- [x] Pass real sidebar counts from the dashboard layout instead of importing preview arrays in `dashboard-shell.tsx`.
+
+Role changes are limited to customer ↔ technician; the admin option is disabled and admin promotion stays in the seed/admin tooling. Approve/reject only applies to `pending` listings, so a rejected listing returns to review only when the technician edits it. Admin payments are empty until Phase 7. The admin user table requests up to 100 rows and has no pagination controls yet.
 
 ### Acceptance checks
 
-- [ ] Admin changes persist after refresh.
-- [ ] Admin cannot demote themselves.
-- [ ] Suspended users cannot sign in.
-- [ ] Non-admin requests to admin endpoints return `403`.
-- [ ] Approve/reject cannot be applied twice to the same pending item.
+- [x] Admin changes persist after refresh.
+- [x] Admin cannot demote themselves.
+- [x] Suspended users cannot sign in.
+- [x] Non-admin requests to admin endpoints return `403`.
+- [x] Approve/reject cannot be applied twice to the same pending item.
 
 ---
 
@@ -1107,6 +1111,21 @@ Keep Better Auth fields. Add:
 }
 ```
 
+### `auditLogs`
+
+```ts
+{
+  _id: string;
+  action: string;
+  actorId: string;
+  actorEmail: string;
+  targetType: "user" | "service" | "booking" | "payment";
+  targetId: string;
+  metadata: Record<string, unknown>;
+  createdAt: Date;
+}
+```
+
 ### Indexes
 
 ```ts
@@ -1136,6 +1155,12 @@ payments.createIndexes([
 reviews.createIndexes([
   { key: { bookingId: 1 }, unique: true },
   { key: { serviceId: 1, createdAt: -1 } },
+]);
+
+auditLogs.createIndexes([
+  { key: { createdAt: -1 } },
+  { key: { actorId: 1, createdAt: -1 } },
+  { key: { targetType: 1, targetId: 1, createdAt: -1 } },
 ]);
 ```
 

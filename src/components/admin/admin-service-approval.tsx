@@ -1,14 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
+import { AlertTriangle, Check, X } from "lucide-react";
 import { cn } from "cn";
 import { CategoryTile } from "@/components/customer/category-tile";
+import { revalidateCatalog } from "@/app/actions";
 import {
   type AdminApproval,
   type AdminService,
 } from "@/lib/admin-data";
 import { formatDate, money } from "@/lib/customer-data";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const FILTERS: Array<{ key: AdminApproval | "all"; label: string }> = [
   { key: "all", label: "All" },
@@ -40,6 +43,8 @@ export function AdminServiceApproval({
   const [services, setServices] = useState(initialServices);
   const [filter, setFilter] = useState<AdminApproval | "all">("all");
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   const counts = useMemo(
     () =>
@@ -68,23 +73,98 @@ export function AdminServiceApproval({
 
   const availableCount = services.filter((service) => service.available).length;
 
-  function setApproval(service: AdminService, approval: AdminApproval) {
-    setServices((current) =>
-      current.map((item) =>
-        item.id === service.id
-          ? {
-              ...item,
-              approval,
-              available: approval === "approved" ? true : item.available,
-            }
-          : item,
-      ),
+  async function approveService(service: AdminService) {
+    if (pendingId) return;
+
+    setPendingId(service.id);
+    setNotice("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/services/${service.id}/approve`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      const body = (await response.json().catch(() => null)) as
+        | { data?: AdminService; error?: { message?: string } }
+        | null;
+
+      if (!response.ok || !body?.data) {
+        throw new Error(body?.error?.message ?? "Could not approve this listing.");
+      }
+
+      const updated = body.data;
+      setServices((current) =>
+        current.map((item) => (item.id === service.id ? updated : item)),
+      );
+      setNotice(`${service.title} approved and published.`);
+      void revalidateCatalog();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not approve this listing.",
+      );
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function rejectService(service: AdminService) {
+    if (pendingId) return;
+
+    const reason = window.prompt(
+      `Reason for rejecting "${service.title}"`,
+      "Does not meet the listing guidelines.",
     );
-    setNotice(
-      approval === "approved"
-        ? `${service.title} approved in this preview.`
-        : `${service.title} rejected in this preview.`,
-    );
+
+    if (reason === null) return;
+
+    if (!reason.trim()) {
+      setError("Enter a rejection reason.");
+      return;
+    }
+
+    setPendingId(service.id);
+    setNotice("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/services/${service.id}/reject`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: reason.trim() }),
+        },
+      );
+      const body = (await response.json().catch(() => null)) as
+        | { data?: AdminService; error?: { message?: string } }
+        | null;
+
+      if (!response.ok || !body?.data) {
+        throw new Error(body?.error?.message ?? "Could not reject this listing.");
+      }
+
+      const updated = body.data;
+      setServices((current) =>
+        current.map((item) => (item.id === service.id ? updated : item)),
+      );
+      setNotice(`${service.title} rejected. The reason is stored for the technician.`);
+      void revalidateCatalog();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not reject this listing.",
+      );
+    } finally {
+      setPendingId(null);
+    }
   }
 
   return (
@@ -107,6 +187,16 @@ export function AdminServiceApproval({
           </span>
         )}
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          className="mt-4 flex items-start gap-2 rounded-[9px] border border-[#b42318]/20 bg-[#fcecea] px-3 py-2.5 text-[11.5px] text-[#b42318] dark:border-[#ff8f82]/20 dark:bg-[#2e1613] dark:text-[#ff8f82]"
+        >
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          {error}
+        </p>
+      )}
 
       {notice && (
         <p
@@ -178,7 +268,7 @@ export function AdminServiceApproval({
                           {service.title}
                         </p>
                         <p className="mt-0.5 text-[10px] text-[#87948d]">
-                          {service.category} · #{service.id.toUpperCase()}
+                          {service.category} · #{service.serviceSlug ?? service.id.toUpperCase()}
                         </p>
                       </div>
                     </div>
@@ -209,6 +299,12 @@ export function AdminServiceApproval({
                       <span className="size-1.5 rounded-full bg-current" />
                       {service.approval}
                     </span>
+                    {service.approval === "rejected" &&
+                      service.rejectionReason && (
+                        <p className="mt-1 max-w-[150px] text-[9.5px] leading-[1.4] text-[#87948d]">
+                          {service.rejectionReason}
+                        </p>
+                      )}
                   </td>
                   <td className="px-3 py-4">
                     <span
@@ -225,35 +321,35 @@ export function AdminServiceApproval({
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      {service.approval === "rejected" ? (
-                        <button
-                          type="button"
-                          onClick={() => setApproval(service, "approved")}
-                          className="inline-flex h-8 items-center rounded-[7px] border border-[#d2ccbc] px-3 text-[10.5px] font-semibold text-[#27352f] dark:border-white/15 dark:text-white"
-                        >
-                          Re-review
-                        </button>
-                      ) : (
-                        <>
-                          {service.approval !== "approved" && (
-                            <button
-                              type="button"
-                              onClick={() => setApproval(service, "approved")}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#3ddc97] px-3 text-[10.5px] font-semibold text-[#06231b]"
-                            >
-                              <Check className="size-3.5" />
-                              Approve
-                            </button>
-                          )}
+                      {service.approval === "pending" ? (
+                        <div className="flex gap-1.5">
                           <button
                             type="button"
-                            onClick={() => setApproval(service, "rejected")}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-[7px] px-2.5 text-[10.5px] font-semibold text-[#b42318] dark:text-[#ff8f82]"
+                            onClick={() => rejectService(service)}
+                            disabled={pendingId === service.id}
+                            className="inline-flex h-8 items-center gap-1.5 rounded-[7px] px-2.5 text-[10.5px] font-semibold text-[#b42318] disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#ff8f82]"
                           >
                             <X className="size-3.5" />
                             Reject
                           </button>
-                        </>
+                          <button
+                            type="button"
+                            onClick={() => approveService(service)}
+                            disabled={pendingId === service.id}
+                            className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#3ddc97] px-3 text-[10.5px] font-semibold text-[#06231b] disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Check className="size-3.5" />
+                            Approve
+                          </button>
+                        </div>
+                      ) : service.approval === "approved" ? (
+                        <span className="text-[9.5px] text-[#87948d]">
+                          Approved
+                        </span>
+                      ) : (
+                        <span className="text-[9.5px] text-[#87948d]">
+                          Awaiting resubmission
+                        </span>
                       )}
                     </div>
                   </td>
@@ -273,7 +369,7 @@ export function AdminServiceApproval({
                     {service.title}
                   </p>
                   <p className="mt-0.5 text-[10px] text-[#87948d]">
-                    {service.category} · #{service.id.toUpperCase()} ·{" "}
+                    {service.category} · #{service.serviceSlug ?? service.id.toUpperCase()} ·{" "}
                     {formatDate(service.createdAt)}
                   </p>
                 </div>
@@ -309,35 +405,33 @@ export function AdminServiceApproval({
               </div>
 
               <div className="mt-3 flex items-center justify-end gap-2">
-                {service.approval === "rejected" ? (
-                  <button
-                    type="button"
-                    onClick={() => setApproval(service, "approved")}
-                    className="inline-flex h-8 items-center rounded-[7px] border border-[#d2ccbc] px-3 text-[10.5px] font-semibold text-[#27352f] dark:border-white/15 dark:text-white"
-                  >
-                    Re-review
-                  </button>
-                ) : (
+                {service.approval === "pending" ? (
                   <>
-                    {service.approval !== "approved" && (
-                      <button
-                        type="button"
-                        onClick={() => setApproval(service, "approved")}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#3ddc97] px-3 text-[10.5px] font-semibold text-[#06231b]"
-                      >
-                        <Check className="size-3.5" />
-                        Approve
-                      </button>
-                    )}
                     <button
                       type="button"
-                      onClick={() => setApproval(service, "rejected")}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-[7px] px-2.5 text-[10.5px] font-semibold text-[#b42318] dark:text-[#ff8f82]"
+                      onClick={() => rejectService(service)}
+                      disabled={pendingId === service.id}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-[7px] px-2.5 text-[10.5px] font-semibold text-[#b42318] disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#ff8f82]"
                     >
                       <X className="size-3.5" />
                       Reject
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => approveService(service)}
+                      disabled={pendingId === service.id}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#3ddc97] px-3 text-[10.5px] font-semibold text-[#06231b] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Check className="size-3.5" />
+                      Approve
+                    </button>
                   </>
+                ) : (
+                  <span className="text-[9.5px] text-[#87948d]">
+                    {service.approval === "approved"
+                      ? "Approved"
+                      : "Awaiting resubmission"}
+                  </span>
                 )}
               </div>
             </div>
@@ -352,8 +446,8 @@ export function AdminServiceApproval({
 
         <div className="flex flex-col gap-2 border-t border-[#e5e1d6] px-5 py-3 text-[10px] text-[#87948d] sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.08]">
           <span>
-            Approving makes a listing public immediately. Rejecting notifies the
-            technician.
+            Approving publishes a listing immediately. Rejected listings return
+            to pending review when the technician edits them.
           </span>
           <span>{visible.length} shown</span>
         </div>

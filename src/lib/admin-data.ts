@@ -16,10 +16,15 @@ export type AdminUser = {
   plan: "free" | "pro";
   rating?: number;
   jobs?: number;
+  banned?: boolean;
+  banReason?: string;
+  emailVerified?: boolean;
+  image?: string | null;
 };
 
 export type AdminService = {
   id: string;
+  serviceSlug?: string;
   title: string;
   category: ServiceCategory;
   price: number;
@@ -27,15 +32,26 @@ export type AdminService = {
   technician: string;
   technicianArea: string;
   approval: AdminApproval;
+  rejectionReason?: string;
   available: boolean;
   createdAt: string;
+  updatedAt?: string;
   rating: number;
   reviews: number;
+  description?: string;
+  location?: string;
+  mode?: "Home Visit" | "Shop Drop-off";
+  includes?: string[];
+  warranty?: string;
+  availabilityNote?: string;
+  coverImage?: string | null;
 };
 
 export type AdminBooking = {
   id: string;
+  bookingNumber?: string;
   serviceId: string;
+  serviceSlug?: string;
   title: string;
   category: ServiceCategory;
   customer: string;
@@ -45,13 +61,17 @@ export type AdminBooking = {
   status: BookingStatus;
   paymentStatus: "paid" | "unpaid";
   basePrice: number;
-  finalAmount: number;
+  finalAmount: number | null;
   createdAt: string;
+  phone?: string;
+  address?: string;
+  problem?: string;
 };
 
 export type AdminPayment = {
   id: string;
   bookingId: string;
+  bookingNumber?: string;
   title: string;
   customer: string;
   customerEmail: string;
@@ -893,7 +913,7 @@ export const ADMIN_STATS = (() => {
     newUsers,
     listings: ADMIN_SERVICES.length,
     pipelineValue: ADMIN_BOOKINGS.reduce(
-      (total, booking) => total + booking.finalAmount,
+      (total, booking) => total + (booking.finalAmount ?? booking.basePrice),
       0,
     ),
   };

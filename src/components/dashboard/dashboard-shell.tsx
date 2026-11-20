@@ -27,11 +27,6 @@ import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { authClient } from "@/lib/auth-client";
 import type { AppRole } from "@/lib/roles";
-import { PENDING_SERVICES } from "@/lib/admin-data";
-import {
-  TECHNICIAN_REQUESTS,
-  TECHNICIAN_SERVICES,
-} from "@/lib/technician-data";
 
 type NavItem = { label: string; href: string; icon: LucideIcon; count?: number };
 
@@ -49,8 +44,6 @@ const TECHNICIAN_NAV: NavItem[] = [
     label: "Manage Requests",
     href: "/dashboard/technician/requests",
     icon: ClipboardList,
-    count: TECHNICIAN_REQUESTS.filter((request) => request.status === "requested")
-      .length,
   },
 ];
 
@@ -61,7 +54,6 @@ const ADMIN_NAV: NavItem[] = [
     label: "Service Approval",
     href: "/dashboard/admin/services",
     icon: ShieldCheck,
-    count: PENDING_SERVICES.length,
   },
   { label: "All Bookings", href: "/dashboard/admin/bookings", icon: ClipboardList },
   { label: "Transactions", href: "/dashboard/admin/transactions", icon: CreditCard },
@@ -127,6 +119,7 @@ function getWorkspace(pathname: string, role: AppRole): AppRole {
 export function DashboardShell({
   user,
   role,
+  counts,
   children,
 }: {
   user: {
@@ -136,6 +129,11 @@ export function DashboardShell({
     area?: string | null;
   };
   role: AppRole;
+  counts?: {
+    pendingRequests?: number;
+    pendingServices?: number;
+    activeListings?: number;
+  };
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -144,7 +142,22 @@ export function DashboardShell({
 
   const workspaceKey = getWorkspace(pathname, role);
   const workspace = WORKSPACES[workspaceKey];
-  const allItems = [...workspace.nav, ...ACCOUNT_NAV];
+  const nav = workspace.nav.map((item) => {
+    if (
+      workspaceKey === "technician" &&
+      item.href === "/dashboard/technician/requests"
+    ) {
+      return { ...item, count: counts?.pendingRequests ?? 0 };
+    }
+    if (
+      workspaceKey === "admin" &&
+      item.href === "/dashboard/admin/services"
+    ) {
+      return { ...item, count: counts?.pendingServices ?? 0 };
+    }
+    return item;
+  });
+  const allItems = [...nav, ...ACCOUNT_NAV];
 
   const exact = allItems.find((item) => item.href === pathname);
   const prefix = allItems
@@ -234,7 +247,7 @@ export function DashboardShell({
         </p>
 
         <nav aria-label={`${workspace.label} workspace`} className="mt-2 grid gap-1">
-          {workspace.nav.map((item) => {
+          {nav.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
 
@@ -306,7 +319,7 @@ export function DashboardShell({
               </p>
               <p className="mt-1 text-[10.5px] leading-[1.5] text-[#5f6f68] dark:text-[#9dab9f]">
                 Your services carry the Verified Pro badge.{" "}
-                {TECHNICIAN_SERVICES.length} active.
+                {counts?.activeListings ?? 0} active.
               </p>
               <Link
                 href="/dashboard/profile"

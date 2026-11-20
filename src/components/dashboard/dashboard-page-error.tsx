@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
-export function CustomerPageError({
+export function DashboardPageError({
   title = "We could not load your data",
   description = "The dashboard API did not respond. Please try again.",
-  retryHref = "/dashboard/customer",
+  retryHref = "/dashboard",
 }: {
   title?: string;
   description?: string;

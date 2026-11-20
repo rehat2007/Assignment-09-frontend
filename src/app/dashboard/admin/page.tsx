@@ -11,39 +11,60 @@ import {
 } from "lucide-react";
 import { AdminExportButton } from "@/components/admin/admin-export-button";
 import { CategoryTile } from "@/components/customer/category-tile";
-import {
-  ADMIN_STATS,
-  CATEGORY_JOBS,
-  PENDING_SERVICES,
-  RECENT_PAYMENTS,
-  REVENUE_SERIES,
-  ROLE_SUMMARY,
-} from "@/lib/admin-data";
+import { DashboardPageError } from "@/components/dashboard/dashboard-page-error";
+import { getAdminOverview, type AdminOverview } from "@/lib/admin-api";
 import { requireRole } from "@/lib/authz";
 import { formatDate, money } from "@/lib/customer-data";
 
 export default async function AdminDashboardPage() {
   await requireRole(["admin"]);
 
-  const roleTotal = ROLE_SUMMARY.reduce(
+  let overview: AdminOverview;
+
+  try {
+    overview = await getAdminOverview();
+  } catch {
+    return (
+      <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
+        <div className="mx-auto max-w-[1264px] px-6 py-8">
+          <DashboardPageError
+            title="We could not load the platform overview"
+            description="Platform statistics could not be loaded. Please try again."
+            retryHref="/dashboard/admin"
+          />
+        </div>
+      </main>
+    );
+  }
+
+  const stats = overview.stats;
+  const roleSummary = overview.roleSummary;
+  const pendingServices = overview.pendingServices;
+  const recentPayments = overview.recentPayments;
+  const revenueSeries = overview.revenueSeries;
+  const categoryJobs = overview.categoryJobs;
+  const roleTotal = roleSummary.reduce(
     (total, role) => total + role.value,
     0,
   );
-  const roleGradient = ROLE_SUMMARY.reduce<{
-    stops: string[];
-    cursor: number;
-  }>(
-    (result, role) => {
-      if (!role.value) return result;
-      const end = result.cursor + (role.value / roleTotal) * 100;
-      return {
-        cursor: end,
-        stops: [...result.stops, `${role.color} ${result.cursor}% ${end}%`],
-      };
-    },
-    { stops: [], cursor: 0 },
-  ).stops.join(", ");
-  const maxJobs = Math.max(...CATEGORY_JOBS.map((item) => item.value), 1);
+  const roleGradient =
+    roleSummary
+      .reduce<{
+        stops: string[];
+        cursor: number;
+      }>(
+        (result, role) => {
+          if (!role.value) return result;
+          const end = result.cursor + (role.value / roleTotal) * 100;
+          return {
+            cursor: end,
+            stops: [...result.stops, `${role.color} ${result.cursor}% ${end}%`],
+          };
+        },
+        { stops: [], cursor: 0 },
+      )
+      .stops.join(", ") || "#e5e1d6 0% 100%";
+  const maxJobs = Math.max(...categoryJobs.map((item) => item.value), 1);
 
   return (
     <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
@@ -64,18 +85,18 @@ export default async function AdminDashboardPage() {
               className="inline-flex h-10 items-center gap-2 rounded-[9px] border border-[#d2ccbc] bg-white px-4 text-[12.5px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-white/15 dark:bg-[#101a16] dark:text-white dark:hover:bg-white/[0.04]"
             >
               <ShieldCheck className="size-4" />
-              Review {ADMIN_STATS.pendingServices} pending
+              Review {stats.pendingServices} pending
             </Link>
             <AdminExportButton
               filename="fixmate-platform-report.csv"
               rows={[
                 ["Metric", "Value"],
-                ["Total users", String(ADMIN_STATS.totalUsers)],
-                ["Technicians", String(ADMIN_STATS.technicians)],
-                ["Pending services", String(ADMIN_STATS.pendingServices)],
-                ["Total revenue", String(ADMIN_STATS.revenue)],
-                ["Transactions", String(ADMIN_STATS.payments)],
-                ["Bookings", String(ADMIN_STATS.listings)],
+                ["Total users", String(stats.totalUsers)],
+                ["Technicians", String(stats.technicians)],
+                ["Pending services", String(stats.pendingServices)],
+                ["Total revenue", String(stats.revenue)],
+                ["Transactions", String(stats.payments)],
+                ["Bookings", String(stats.listings)],
               ]}
             />
           </div>
@@ -84,32 +105,32 @@ export default async function AdminDashboardPage() {
         <section className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           <AdminStat
             label="Total users"
-            value={String(ADMIN_STATS.totalUsers)}
-            note={`+${ADMIN_STATS.newUsers} this month`}
+            value={String(stats.totalUsers)}
+            note={`+${stats.newUsers} this month`}
             icon={<Users className="size-4" />}
             tone="mint"
           />
           <AdminStat
             label="Technicians"
-            value={String(ADMIN_STATS.technicians)}
-            note={`${ADMIN_STATS.proTechnicians} on Pro plan`}
+            value={String(stats.technicians)}
+            note={`${stats.proTechnicians} on Pro plan`}
             icon={<Wrench className="size-4" />}
             tone="indigo"
           />
           <AdminStat
             label="Pending services"
-            value={String(ADMIN_STATS.pendingServices)}
+            value={String(stats.pendingServices)}
             note="Awaiting approval"
             icon={<ShieldCheck className="size-4" />}
             tone="amber"
           />
           <AdminStat
             label="Total revenue"
-            value={money(ADMIN_STATS.revenue)}
-            note="Stripe test mode"
+            value={money(stats.revenue)}
+            note="Verified payments"
             icon={<Wallet className="size-4" />}
             tone="mint"
-            spark
+            spark={<Sparkline series={revenueSeries} />}
           />
         </section>
 
@@ -127,23 +148,23 @@ export default async function AdminDashboardPage() {
               </div>
               <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[6px] bg-[#e4f2ec] px-2.5 py-1 text-[10px] font-semibold text-[#0e6b54] dark:bg-[#112c25] dark:text-[#43d3ab]">
                 <span className="size-1.5 rounded-full bg-current" />
-                {money(ADMIN_STATS.revenue)} lifetime
+                {money(stats.revenue)} lifetime
               </span>
             </div>
 
             <div className="-mx-1 mt-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <RevenueChart />
+              <RevenueChart series={revenueSeries} />
             </div>
 
             <div className="mt-2 grid grid-cols-2 gap-4 border-t border-[#e5e1d6] pt-4 sm:grid-cols-4 dark:border-white/[0.08]">
-              <MiniStat label="Payments" value={String(ADMIN_STATS.payments)} />
+              <MiniStat label="Payments" value={String(stats.payments)} />
               <MiniStat
                 label="Avg. transaction"
-                value={money(ADMIN_STATS.avgTransaction)}
+                value={money(stats.avgTransaction)}
               />
               <MiniStat
                 label="This month"
-                value={money(ADMIN_STATS.thisMonth)}
+                value={money(stats.thisMonth)}
               />
               <Link
                 href="/dashboard/admin/transactions"
@@ -181,7 +202,7 @@ export default async function AdminDashboardPage() {
               </div>
 
               <div className="w-full space-y-3">
-                {ROLE_SUMMARY.map((role) => (
+                {roleSummary.map((role) => (
                   <div
                     key={role.label}
                     className="flex items-center justify-between gap-3 text-[11px]"
@@ -215,7 +236,7 @@ export default async function AdminDashboardPage() {
               </div>
 
               <div className="mt-3 grid gap-2.5">
-                {CATEGORY_JOBS.slice(0, 4).map((item) => (
+                {categoryJobs.slice(0, 4).map((item) => (
                   <div key={item.label} className="flex items-center gap-3">
                     <span className="w-[86px] shrink-0 truncate text-[11px] text-[#5f6f68] dark:text-[#9dab9f]">
                       {item.label}
@@ -236,6 +257,11 @@ export default async function AdminDashboardPage() {
                     </span>
                   </div>
                 ))}
+                {categoryJobs.length === 0 && (
+                  <p className="text-[11px] text-[#87948d]">
+                    No bookings yet.
+                  </p>
+                )}
               </div>
             </div>
           </section>
@@ -255,12 +281,12 @@ export default async function AdminDashboardPage() {
               </div>
               <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[6px] bg-[#fcf0d7] px-2.5 py-1 text-[10px] font-semibold text-[#a65c07] dark:bg-[#2b2415] dark:text-[#f0bb6a]">
                 <span className="size-1.5 rounded-full bg-current" />
-                {ADMIN_STATS.pendingServices} pending
+                {stats.pendingServices} pending
               </span>
             </div>
 
             <div className="mt-2 divide-y divide-[#e5e1d6] dark:divide-white/[0.07]">
-              {PENDING_SERVICES.map((service) => (
+              {pendingServices.map((service) => (
                 <div
                   key={service.id}
                   className="flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center"
@@ -293,6 +319,11 @@ export default async function AdminDashboardPage() {
                   </div>
                 </div>
               ))}
+              {pendingServices.length === 0 && (
+                <p className="py-4 text-[11.5px] text-[#5f6f68] dark:text-[#9dab9f]">
+                  No listings awaiting approval.
+                </p>
+              )}
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-[#e5e1d6] pt-3 text-[11px] dark:border-white/[0.08]">
@@ -303,7 +334,7 @@ export default async function AdminDashboardPage() {
                 Review all listings <ArrowRight className="size-3.5" />
               </Link>
               <span className="text-[#87948d]">
-                {ADMIN_STATS.listings} total
+                {stats.listings} total
               </span>
             </div>
           </section>
@@ -328,7 +359,7 @@ export default async function AdminDashboardPage() {
             </div>
 
             <div className="mt-2 divide-y divide-[#e5e1d6] dark:divide-white/[0.07]">
-              {RECENT_PAYMENTS.map((payment) => (
+              {recentPayments.map((payment) => (
                 <div
                   key={payment.id}
                   className="flex items-start gap-2.5 py-3"
@@ -352,6 +383,11 @@ export default async function AdminDashboardPage() {
                   </span>
                 </div>
               ))}
+              {recentPayments.length === 0 && (
+                <p className="py-4 text-[11.5px] text-[#5f6f68] dark:text-[#9dab9f]">
+                  No payments yet.
+                </p>
+              )}
             </div>
           </section>
         </div>
@@ -375,14 +411,14 @@ function AdminStat({
   note,
   icon,
   tone,
-  spark = false,
+  spark,
 }: {
   label: string;
   value: string;
   note: string;
   icon: ReactNode;
   tone: "mint" | "indigo" | "amber";
-  spark?: boolean;
+  spark?: ReactNode;
 }) {
   const tones = {
     mint: "bg-[#e4f2ec] text-[#0e6b54] dark:bg-[#112c25] dark:text-[#43d3ab]",
@@ -408,7 +444,7 @@ function AdminStat({
         <p className="font-heading text-[30px] font-extrabold leading-none tracking-[-0.04em] text-[#0f1a15] dark:text-white">
           {value}
         </p>
-        {spark && <Sparkline />}
+        {spark}
       </div>
       <p className="mt-3 text-[10.5px] text-[#5f6f68] dark:text-[#9dab9f]">
         {note}
@@ -417,10 +453,14 @@ function AdminStat({
   );
 }
 
-function Sparkline() {
-  const max = Math.max(...REVENUE_SERIES.map((item) => item.value), 1);
-  const points = REVENUE_SERIES.map((item, index) => {
-    const x = (index / Math.max(REVENUE_SERIES.length - 1, 1)) * 66;
+function Sparkline({
+  series,
+}: {
+  series: Array<{ label: string; value: number }>;
+}) {
+  const max = Math.max(...series.map((item) => item.value), 1);
+  const points = series.map((item, index) => {
+    const x = (index / Math.max(series.length - 1, 1)) * 66;
     const y = 22 - (item.value / max) * 20;
     return `${x},${y}`;
   }).join(" ");
@@ -443,7 +483,11 @@ function Sparkline() {
   );
 }
 
-function RevenueChart() {
+function RevenueChart({
+  series,
+}: {
+  series: Array<{ label: string; value: number }>;
+}) {
   const width = 640;
   const height = 260;
   const left = 44;
@@ -451,19 +495,19 @@ function RevenueChart() {
   const top = 14;
   const bottom = 34;
   const maxValue = Math.ceil(
-    Math.max(...REVENUE_SERIES.map((item) => item.value), 1) / 78,
+    Math.max(...series.map((item) => item.value), 1) / 78,
   ) * 78;
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((ratio) =>
     Math.round(maxValue * ratio),
   );
   const x = (index: number) =>
     left +
-    (index / Math.max(REVENUE_SERIES.length - 1, 1)) *
+    (index / Math.max(series.length - 1, 1)) *
       (width - left - right);
   const y = (value: number) =>
     top + (1 - value / maxValue) * (height - top - bottom);
 
-  const points = REVENUE_SERIES.map((item, index) => ({
+  const points = series.map((item, index) => ({
     x: x(index),
     y: y(item.value),
     label: item.label,
@@ -479,7 +523,7 @@ function RevenueChart() {
       viewBox={`0 0 ${width} ${height}`}
       className="w-full min-w-[520px] text-[#2fae7f] dark:text-[#63e6b6]"
       role="img"
-      aria-label={`Revenue for the last 6 months: ${REVENUE_SERIES.map(
+      aria-label={`Revenue for the last 6 months: ${series.map(
         (item) => `${item.label} ${money(item.value)}`,
       ).join(", ")}`}
     >
