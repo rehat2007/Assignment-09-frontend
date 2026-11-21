@@ -14,6 +14,7 @@ export type CustomerBooking = {
   serviceId: string;
   serviceSlug?: string;
   title: string;
+  serviceImage?: string | null;
   category: ServiceCategory;
   technician: string;
   preferredDate: string;

@@ -33,6 +33,7 @@ export type TechnicianRequest = {
   serviceId: string;
   serviceSlug?: string;
   serviceTitle: string;
+  serviceImage?: string | null;
   category: ServiceCategory;
   customer: string;
   phone: string | null;

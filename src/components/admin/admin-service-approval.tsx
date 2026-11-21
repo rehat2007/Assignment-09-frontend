@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { AlertTriangle, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
-import { CategoryTile } from "@/components/customer/category-tile";
+import { ServiceThumbnail } from "@/components/service-thumbnail";
 import { revalidateCatalog } from "@/app/actions";
 import {
   type AdminApproval,
@@ -256,7 +256,11 @@ export function AdminServiceApproval({
                 >
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <CategoryTile category={service.category} small />
+                      <ServiceThumbnail
+                        image={service.coverImage}
+                        category={service.category}
+                        small
+                      />
                       <div className="min-w-0">
                         <p className="font-semibold text-[#0f1a15] dark:text-white">
                           {service.title}
@@ -357,7 +361,11 @@ export function AdminServiceApproval({
           {visible.map((service) => (
             <div key={service.id} className="p-4">
               <div className="flex items-start gap-3">
-                <CategoryTile category={service.category} small />
+                <ServiceThumbnail
+                  image={service.coverImage}
+                  category={service.category}
+                  small
+                />
                 <div className="min-w-0 flex-1">
                   <p className="text-[12.5px] font-semibold text-[#0f1a15] dark:text-white">
                     {service.title}

@@ -10,8 +10,8 @@ import {
   Wallet,
   Wrench,
 } from "lucide-react";
-import { CategoryTile } from "@/components/customer/category-tile";
 import { DashboardPageError } from "@/components/dashboard/dashboard-page-error";
+import { ServiceThumbnail } from "@/components/service-thumbnail";
 import { requireRole } from "@/lib/authz";
 import { BOOKING_STATUS_COLOR, BOOKING_STATUS_LABEL, formatDate, money } from "@/lib/customer-data";
 import {
@@ -224,7 +224,11 @@ export default async function TechnicianOverviewPage() {
 
               {latestRequest ? (
                 <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#e5e1d6] bg-[#fbfaf6] p-3 sm:flex-row sm:items-center dark:border-white/[0.08] dark:bg-[#0b1510]">
-                  <CategoryTile category={latestRequest.category} small />
+                  <ServiceThumbnail
+                    image={latestRequest.serviceImage}
+                    category={latestRequest.category}
+                    small
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[12.5px] font-semibold text-[#0f1a15] dark:text-white">
                       {latestRequest.serviceTitle}
@@ -384,7 +388,11 @@ export default async function TechnicianOverviewPage() {
                     }
                     className="flex items-center gap-3 py-3"
                   >
-                    <CategoryTile category={service.category} small />
+                    <ServiceThumbnail
+                      image={service.coverImage}
+                      category={service.category}
+                      small
+                    />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[12px] font-semibold text-[#0f1a15] dark:text-white">
                         {service.title}

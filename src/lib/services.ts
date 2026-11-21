@@ -22,6 +22,7 @@ export type Service = {
   price: number;
   mode: ServiceMode;
   createdAt: string;
+  coverImage?: string | null;
 };
 
 export const CATEGORIES: ServiceCategory[] = [

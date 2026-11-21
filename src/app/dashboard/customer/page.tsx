@@ -13,8 +13,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { BookingTimeline, StatusBadge } from "@/components/customer/booking-status";
-import { CategoryTile } from "@/components/customer/category-tile";
 import { DashboardPageError } from "@/components/dashboard/dashboard-page-error";
+import { ServiceThumbnail } from "@/components/service-thumbnail";
 import { requireRole } from "@/lib/authz";
 import { getServices, type ServiceSummary } from "@/lib/catalog";
 import {
@@ -182,7 +182,10 @@ export default async function CustomerOverviewPage() {
               {active ? (
                 <div className="mt-4 rounded-xl border border-[#e5e1d6] bg-[#fbfaf6] p-4 dark:border-white/[0.08] dark:bg-[#0b1510]">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <CategoryTile category={active.category} />
+                    <ServiceThumbnail
+                      image={active.serviceImage}
+                      category={active.category}
+                    />
                     <div className="min-w-0 flex-1">
                       <h3 className="font-heading text-[14px] font-bold text-[#0f1a15] dark:text-white">
                         {active.title}
@@ -252,7 +255,11 @@ export default async function CustomerOverviewPage() {
                     key={booking.id}
                     className="flex items-center gap-3 py-3"
                   >
-                    <CategoryTile category={booking.category} small />
+                    <ServiceThumbnail
+                      image={booking.serviceImage}
+                      category={booking.category}
+                      small
+                    />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[12.5px] font-semibold text-[#0f1a15] dark:text-white">
                         {booking.title}
@@ -386,7 +393,10 @@ export default async function CustomerOverviewPage() {
                   href={`/services/${recommended.id}`}
                   className="mt-4 flex items-center gap-3 rounded-xl border border-[#e5e1d6] bg-[#fbfaf6] p-3 transition hover:border-[#d2ccbc] dark:border-white/[0.08] dark:bg-[#0b1510]"
                 >
-                  <CategoryTile category={recommended.category} />
+                  <ServiceThumbnail
+                    image={recommended.coverImage}
+                    category={recommended.category}
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[12.5px] font-semibold text-[#0f1a15] dark:text-white">
                       {recommended.title}

@@ -62,6 +62,7 @@ export default async function ServiceDetailPage({ params }: Props) {
   const Icon = CATEGORY_ICONS[service.category];
   const tone = TONES[CATEGORY_TONES[service.category]];
   const ModeIcon = service.mode === "Home Visit" ? House : Briefcase;
+  const hasCover = Boolean(service.coverImage);
   const initials = service.technician
     .split(" ")
     .map((part) => part[0])
@@ -106,25 +107,40 @@ export default async function ServiceDetailPage({ params }: Props) {
         <div className="site-container grid gap-[34px] pb-[60px] pt-8 lg:grid-cols-[minmax(0,1.62fr)_minmax(0,0.9fr)] lg:items-start">
           <div data-reveal>
             <div
-              className={`relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-[20px] border ${tone.media} dark:border-white/[0.08]`}
+              className={`relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-[20px] border dark:border-white/[0.08] ${
+                hasCover ? "bg-cover bg-center" : tone.media
+              }`}
+              style={
+                hasCover
+                  ? { backgroundImage: `url(${service.coverImage})` }
+                  : undefined
+              }
             >
-              <div className="pointer-events-none absolute inset-0 bg-transparent dark:bg-[#04100b]/35" />
-              <div className={`pointer-events-none absolute inset-0 ${tone.glow}`} />
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(15,26,21,0.14)_1px,transparent_1px)] bg-[size:18px_18px] opacity-40 [mask-image:radial-gradient(circle_at_22%_78%,#000,transparent_62%)] dark:bg-[radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1px)]" />
+              {hasCover ? (
+                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,16,11,0.12),rgba(4,16,11,0.58))]" />
+              ) : (
+                <>
+                  <div className="pointer-events-none absolute inset-0 bg-transparent dark:bg-[#04100b]/35" />
+                  <div className={`pointer-events-none absolute inset-0 ${tone.glow}`} />
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(15,26,21,0.14)_1px,transparent_1px)] bg-[size:18px_18px] opacity-40 [mask-image:radial-gradient(circle_at_22%_78%,#000,transparent_62%)] dark:bg-[radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1px)]" />
+                </>
+              )}
 
               <span className="absolute left-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-[6px] bg-[#e2f4e9] px-2.5 py-1.5 text-[10.5px] font-semibold text-[#147a4b] dark:bg-[#0f2a20] dark:text-[#5ad19a]">
                 <span className="size-1.5 rounded-full bg-current" />
                 Approved
               </span>
 
-              <div
-                className={`relative z-[1] flex size-[120px] items-center justify-center rounded-[32px] border sm:size-[150px] sm:rounded-[38px] ${tone.tile}`}
-              >
-                <Icon
-                  className={`size-[56px] sm:size-[72px] ${tone.icon}`}
-                  strokeWidth={1.6}
-                />
-              </div>
+              {!hasCover && (
+                <div
+                  className={`relative z-[1] flex size-[120px] items-center justify-center rounded-[32px] border sm:size-[150px] sm:rounded-[38px] ${tone.tile}`}
+                >
+                  <Icon
+                    className={`size-[56px] sm:size-[72px] ${tone.icon}`}
+                    strokeWidth={1.6}
+                  />
+                </div>
+              )}
 
               <span className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-[7px] rounded-[9px] border border-[#e5e1d6] bg-white/90 px-3 py-[7px] text-[11.5px] font-semibold text-[#27352f] backdrop-blur dark:border-white/10 dark:bg-[#0c1713]/80 dark:text-[#eaf5ee]">
                 <ShieldCheck className="size-[13px] text-[#0e6b54] dark:text-[#43d3ab]" />
@@ -226,8 +242,17 @@ export default async function ServiceDetailPage({ params }: Props) {
               </h2>
 
               <div className="flex flex-col gap-3.5 rounded-2xl border border-[#e5e1d6] bg-white p-[18px] sm:flex-row dark:border-white/[0.08] dark:bg-[#101a16]">
-                <span className="flex size-[54px] shrink-0 items-center justify-center rounded-full bg-[#c9f5db] text-[18px] font-bold text-[#0b3b26] dark:bg-[#123c2a] dark:text-[#8bf0c4]">
-                  {initials}
+                <span
+                  className="flex size-[54px] shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#c9f5db] bg-cover bg-center text-[18px] font-bold text-[#0b3b26] dark:border-white/10 dark:bg-[#123c2a] dark:text-[#8bf0c4]"
+                  style={
+                    service.technicianProfile.image
+                      ? {
+                          backgroundImage: `url(${service.technicianProfile.image})`,
+                        }
+                      : undefined
+                  }
+                >
+                  {!service.technicianProfile.image && initials}
                 </span>
 
                 <div className="min-w-0 flex-1">

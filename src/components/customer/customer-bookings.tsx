@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 import { BookingTimeline, StatusBadge } from "@/components/customer/booking-status";
-import { CategoryTile } from "@/components/customer/category-tile";
 import { CustomerReviewDialog } from "@/components/customer/customer-review-dialog";
+import { ServiceThumbnail } from "@/components/service-thumbnail";
 import {
   BOOKING_STATUS_LABEL,
   type BookingStatus,
@@ -245,7 +245,10 @@ export function CustomerBookings({
           >
             <div className="flex flex-col gap-3 p-4 md:grid md:grid-cols-[minmax(0,1fr)_130px_120px_auto] md:items-center md:gap-4">
               <div className="flex min-w-0 items-center gap-3">
-                <CategoryTile category={booking.category} />
+                <ServiceThumbnail
+                  image={booking.serviceImage}
+                  category={booking.category}
+                />
                 <div className="min-w-0">
                   <h2 className="truncate font-heading text-[13.5px] font-bold text-[#0f1a15] dark:text-white">
                     {booking.title}

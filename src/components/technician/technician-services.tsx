@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { cn } from "cn";
-import { CategoryTile } from "@/components/customer/category-tile";
+import { ServiceThumbnail } from "@/components/service-thumbnail";
 import { EditServiceDialog } from "@/components/technician/edit-service-dialog";
 import { revalidateCatalog } from "@/app/actions";
 import { formatDate, money } from "@/lib/customer-data";
@@ -259,7 +259,11 @@ export function TechnicianServices({
                 <tr key={service.id} className="text-[11.5px]">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <CategoryTile category={service.category} small />
+                      <ServiceThumbnail
+                    image={service.coverImage}
+                    category={service.category}
+                    small
+                  />
                       <div className="min-w-0">
                         <p className="font-semibold text-[#0f1a15] dark:text-white">
                           {service.title}
@@ -354,7 +358,11 @@ export function TechnicianServices({
           {visible.map((service) => (
             <div key={service.id} className="p-4">
               <div className="flex items-start gap-3">
-                <CategoryTile category={service.category} small />
+                <ServiceThumbnail
+                  image={service.coverImage}
+                  category={service.category}
+                  small
+                />
                 <div className="min-w-0 flex-1">
                   <p className="text-[12.5px] font-semibold text-[#0f1a15] dark:text-white">
                     {service.title}

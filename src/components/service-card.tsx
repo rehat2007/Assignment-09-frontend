@@ -15,13 +15,25 @@ export function ServiceCard({ service }: { service: Service }) {
   const Icon = CATEGORY_ICONS[service.category];
   const tone = TONES[CATEGORY_TONES[service.category]];
   const ModeIcon = service.mode === "Home Visit" ? House : Briefcase;
+  const hasCover = Boolean(service.coverImage);
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-[18px] border border-[#e5e1d6] bg-white transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_-24px_rgba(15,26,21,0.35)] dark:border-white/[0.08] dark:bg-[#101a16]">
       <div
-        className={`relative flex aspect-[16/10] items-center justify-center overflow-hidden border-b border-black/[0.06] ${tone.media}`}
+        className={`relative flex aspect-[16/10] items-center justify-center overflow-hidden border-b border-black/[0.06] ${
+          hasCover ? "bg-cover bg-center" : tone.media
+        }`}
+        style={
+          hasCover
+            ? { backgroundImage: `url(${service.coverImage})` }
+            : undefined
+        }
       >
-        <div className={`pointer-events-none absolute inset-0 ${tone.glow}`} />
+        {hasCover ? (
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,16,11,0.08),rgba(4,16,11,0.52))]" />
+        ) : (
+          <div className={`pointer-events-none absolute inset-0 ${tone.glow}`} />
+        )}
 
         <span className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-[7px] border border-black/[0.06] bg-white/90 px-2.5 py-1.5 text-[11px] font-semibold text-[#27352f] backdrop-blur dark:border-white/10 dark:bg-black/45 dark:text-white">
           <Icon className={`size-3 ${tone.icon}`} />
@@ -33,11 +45,13 @@ export function ServiceCard({ service }: { service: Service }) {
           {service.mode}
         </span>
 
-        <div
-          className={`relative flex size-[88px] items-center justify-center rounded-3xl border transition duration-300 group-hover:-translate-y-1 group-hover:rotate-[-3deg] ${tone.tile}`}
-        >
-          <Icon className={`size-10 ${tone.icon}`} strokeWidth={1.7} />
-        </div>
+        {!hasCover && (
+          <div
+            className={`relative flex size-[88px] items-center justify-center rounded-3xl border transition duration-300 group-hover:-translate-y-1 group-hover:rotate-[-3deg] ${tone.tile}`}
+          >
+            <Icon className={`size-10 ${tone.icon}`} strokeWidth={1.7} />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-2.5 px-4 pb-4 pt-3.5">

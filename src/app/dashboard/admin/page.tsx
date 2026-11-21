@@ -10,8 +10,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { AdminExportButton } from "@/components/admin/admin-export-button";
-import { CategoryTile } from "@/components/customer/category-tile";
 import { DashboardPageError } from "@/components/dashboard/dashboard-page-error";
+import { ServiceThumbnail } from "@/components/service-thumbnail";
 import { getAdminOverview, type AdminOverview } from "@/lib/admin-api";
 import { requireRole } from "@/lib/authz";
 import { formatDate, money } from "@/lib/customer-data";
@@ -292,7 +292,11 @@ export default async function AdminDashboardPage() {
                   className="flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <CategoryTile category={service.category} small />
+                    <ServiceThumbnail
+                      image={service.coverImage}
+                      category={service.category}
+                      small
+                    />
                     <div className="min-w-0">
                       <p className="truncate text-[12.5px] font-semibold text-[#0f1a15] dark:text-white">
                         {service.title}
