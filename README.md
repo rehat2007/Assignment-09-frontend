@@ -793,21 +793,21 @@ Role changes are limited to customer ↔ technician; the admin option is disable
 
 ### Endpoints
 
-- [ ] `POST /api/v1/bookings/:id/checkout`
-- [ ] `POST /api/v1/webhooks/stripe`
-- [ ] `GET /api/v1/payments/:id/invoice` (P1)
+- [x] `POST /api/v1/bookings/:id/checkout`
+- [x] `POST /api/v1/webhooks/stripe`
+- [ ] `GET /api/v1/payments/:id/invoice` (P1) *(Deferred; the in-page invoice modal still uses payment data.)*
 
 ### Tasks
 
-- [ ] Install `stripe` in the backend.
-- [ ] Add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
-- [ ] Create Checkout Session from server-side `finalAmount`.
-- [ ] Store `providerSessionId`.
-- [ ] Verify webhook signature using the raw body.
-- [ ] Handle `checkout.session.completed` and `payment_intent.succeeded`.
-- [ ] Insert exactly one payment per booking.
-- [ ] Mark booking paid only after webhook verification.
-- [ ] Add idempotency unique indexes.
+- [x] Install `stripe` in the backend.
+- [x] Add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
+- [x] Create Checkout Session from server-side `finalAmount`.
+- [x] Store `providerSessionId`.
+- [x] Verify webhook signature using the raw body.
+- [x] Handle `checkout.session.completed` and `payment_intent.succeeded`.
+- [x] Insert exactly one payment per booking.
+- [x] Mark booking paid only after webhook verification.
+- [x] Add idempotency unique indexes.
 
 ### Critical middleware order
 
@@ -831,11 +831,15 @@ stripe listen --forward-to localhost:4000/api/v1/webhooks/stripe
 
 ### Acceptance checks
 
-- [ ] Test card `4242 4242 4242 4242` creates one payment.
-- [ ] Replaying the webhook does not create a duplicate.
-- [ ] Refreshing the customer dashboard shows paid.
-- [ ] Technician earnings include the paid amount.
-- [ ] No client call can mark a booking paid.
+- [x] Test card `4242 4242 4242 4242` creates one payment. *(Verified live on 2026-11-21: one payment, booking marked paid, test data deleted afterwards.)*
+- [x] Replaying the webhook does not create a duplicate.
+- [x] Refreshing the customer dashboard shows paid.
+- [x] Technician earnings include the paid amount.
+- [x] No client call can mark a booking paid.
+
+`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set in the backend `.env`. The webhook secret is now a valid `whsec_...` value. Checkout reuses an open session for the same booking; a completed session returns `409 PAYMENT_PROCESSING`. The success and cancel URLs both return to `/dashboard/customer/bookings`.
+
+The live card test used the temporary Stripe endpoint `we_1UeG3lDbTSRRDIHKe7exnR40` and a Cloudflare quick tunnel. That tunnel URL is ephemeral: stop `cloudflared` when done, and either delete the temporary endpoint in the Stripe Dashboard or update it with a permanent URL. The signing secret is tied to the endpoint.
 
 ---
 
@@ -1071,6 +1075,7 @@ Keep Better Auth fields. Add:
   completedAt?: Date;
   cancelledAt?: Date;
   rejectedAt?: Date;
+  checkoutSessionId?: string;
 }
 ```
 
@@ -1147,6 +1152,7 @@ bookings.createIndexes([
 payments.createIndexes([
   { key: { bookingId: 1 }, unique: true },
   { key: { providerSessionId: 1 }, unique: true },
+  { key: { providerPaymentIntentId: 1 }, unique: true, sparse: true },
   { key: { paidAt: -1 } },
   { key: { customerId: 1, paidAt: -1 } },
   { key: { technicianId: 1, paidAt: -1 } },
