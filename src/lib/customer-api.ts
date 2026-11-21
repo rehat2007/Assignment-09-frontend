@@ -48,3 +48,15 @@ export async function getCustomerPayments() {
 
   return data;
 }
+
+export async function getPaymentVerification(sessionId: string) {
+  const { data } = await apiFetch<CustomerPayment>(
+    "/api/v1/payments/verify",
+    {
+      withCookies: true,
+      searchParams: { session_id: sessionId },
+    },
+  );
+
+  return data;
+}
