@@ -44,6 +44,7 @@ export function CustomerBookings({
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
   const router = useRouter();
 
   const counts = useMemo(
@@ -112,11 +113,43 @@ export function CustomerBookings({
     }
   }
 
-  function payBooking() {
+  async function startCheckout(booking: CustomerBooking) {
+    if (checkoutId) return;
+
+    setCheckoutId(booking.id);
+    setNotice("");
     setError("");
-    setNotice(
-      "Online payment is not connected yet. Stripe checkout is coming soon.",
-    );
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/bookings/${booking.id}/checkout`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      const body = (await response.json().catch(() => null)) as
+        | {
+            data?: { url?: string };
+            error?: { message?: string };
+          }
+        | null;
+
+      if (!response.ok || !body?.data?.url) {
+        throw new Error(
+          body?.error?.message ?? "Could not start checkout.",
+        );
+      }
+
+      window.location.href = body.data.url;
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not start checkout.",
+      );
+      setCheckoutId(null);
+    }
   }
 
   return (
@@ -275,10 +308,13 @@ export function CustomerBookings({
                   booking.paymentStatus === "unpaid" && (
                     <button
                       type="button"
-                      onClick={() => payBooking()}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#0e6b54]/10 px-3 text-[11px] font-semibold text-[#0e6b54] transition hover:bg-[#0e6b54]/15 dark:bg-[#63e6b6]/10 dark:text-[#63e6b6]"
+                      onClick={() => startCheckout(booking)}
+                      disabled={checkoutId === booking.id}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#0e6b54]/10 px-3 text-[11px] font-semibold text-[#0e6b54] transition hover:bg-[#0e6b54]/15 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#63e6b6]/10 dark:text-[#63e6b6]"
                     >
-                      Pay now
+                      {checkoutId === booking.id
+                        ? "Redirecting…"
+                        : "Pay now"}
                     </button>
                   )}
 

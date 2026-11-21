@@ -143,7 +143,7 @@ export function CustomerPayments({
           </div>
           <span className="inline-flex w-fit items-center gap-1.5 rounded-[6px] bg-[#e4f2ec] px-2.5 py-1.5 text-[10px] font-semibold text-[#0e6b54] dark:bg-[#112c25] dark:text-[#43d3ab]">
             <span className="size-1.5 rounded-full bg-current" />
-            Checkout coming soon
+            Stripe checkout
           </span>
         </div>
 
@@ -155,8 +155,7 @@ export function CustomerPayments({
                 No payments yet
               </p>
               <p className="mx-auto mt-2 max-w-[42ch] text-[12px] leading-[1.6] text-[#5f6f68] dark:text-[#9dab9f]">
-                Payments appear here after a completed repair is paid. Stripe
-                checkout is coming soon.
+                Payments appear here after a completed repair is paid.
               </p>
             </div>
           )}
@@ -259,7 +258,7 @@ export function CustomerPayments({
         <div className="flex flex-col gap-2 border-t border-[#e5e1d6] px-5 py-3 text-[10px] text-[#87948d] sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.08]">
           <span className="flex items-center gap-1.5">
             <ShieldCheck className="size-3.5" />
-            Stripe checkout is not connected yet.
+            Payments are recorded after Stripe confirms checkout.
           </span>
           <span>
             Showing {payments.length} of {payments.length}
