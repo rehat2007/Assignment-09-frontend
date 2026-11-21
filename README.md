@@ -1,3 +1,225 @@
+# FixMate — Smart Device & Home Appliance Repair Platform
+
+FixMate is a full-stack, role-based repair marketplace for smartphones, laptops,
+ACs, refrigerators, TVs, washing machines, and electrical work. Customers browse
+approved services, send repair requests, track the job, and pay only after the
+work is completed. Technicians manage listings and jobs. Admins approve
+listings, manage users, and monitor bookings and payments.
+
+> **Assignment 9 submission details** are in this top section. The detailed
+> phase-by-phase backend implementation contract follows below.
+
+## Live URL
+
+```text
+<ADD THE PRODUCTION FRONTEND URL HERE AFTER DEPLOYMENT>
+```
+
+Backend health endpoint:
+
+```text
+<ADD THE PRODUCTION BACKEND URL>/api/v1/health
+```
+
+## Demo credentials
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@fixmate.dev` | `ADMIN_PASSWORD` from the backend `.env` (not committed) |
+| Technician | `rakib@fixmate.dev` | `FixMateDemo123!` |
+| Technician | `sadia@fixmate.dev` | `FixMateDemo123!` |
+| Technician | `nayeem@fixmate.dev` | `FixMateDemo123!` |
+| Customer | `customer@fixmate.dev` | `FixMateDemo123!` |
+| Customer | `tanvir@mail.com` | `FixMateDemo123!` |
+
+Before submitting, replace the admin password placeholder with the real admin
+password or share it privately with the evaluator.
+
+## Key features
+
+- Better Auth customer/technician sign-up and sign-in.
+- Admin accounts are not selectable during public sign-up.
+- JWT access tokens with `verifyToken`, `verifyCustomer`, `verifyTechnician`,
+  and `verifyAdmin` middlewares.
+- Role-based dashboards for customer, technician, and admin.
+- Public catalog with server-side search, category/mode filters, price/newest
+  sorting, and pagination.
+- Technician service CRUD, approval resets on edit, and availability toggles.
+- Customer repair requests, duplicate-active-request prevention, cancellation,
+  and a visual job timeline.
+- Server-enforced job pipeline:
+  `requested → accepted → in-progress → completed`.
+- Stripe test-mode checkout, webhook verification, success-page verification,
+  and idempotent payment recording.
+- Payment history, invoices, technician earnings, and admin revenue.
+- Customer reviews, rating aggregation, and a database-driven review
+  distribution.
+- Avatar and service-cover uploads with MIME/size validation, local/S3/ImgBB
+  storage drivers, and public URL storage.
+- Admin user management, role changes, suspension/restoration, service
+  approval/rejection, and audit logging.
+- Responsive design, dark mode, charts, status badges, empty states, custom
+  404/error pages, loading skeletons, confirmation dialogs, and toast
+  notifications.
+- Idempotent demo seed with eight bookings across every status and two paid
+  demo transactions.
+
+## Tech stack
+
+- **Frontend:** Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4,
+  shadcn-style components, Lucide icons, GSAP, Sonner.
+- **Backend:** Node.js, Express, TypeScript, MongoDB, Better Auth, JWT,
+  Stripe, Zod, Multer, AWS S3 SDK.
+- **Database:** MongoDB (`user`, `services`, `bookings`, `payments` plus the
+  optional `reviews`, `technicianProfiles`, and `auditLogs` extensions).
+- **Payments:** Stripe Checkout and webhooks (test mode).
+- **Media:** ImgBB, S3-compatible storage, or local development storage.
+
+## npm packages
+
+Frontend highlights:
+
+```text
+next, react, react-dom, better-auth, gsap, lucide-react, sonner,
+tailwindcss, shadcn, @base-ui/react, class-variance-authority, cn,
+tw-animate-css
+```
+
+Backend highlights:
+
+```text
+express, cors, helmet, mongodb, better-auth, @better-auth/mongo-adapter,
+stripe, zod, multer, jsonwebtoken, @aws-sdk/client-s3, dotenv
+```
+
+The complete dependency lists are in `fix_mate_front_end/package.json` and
+`fix_mate_back_end/package.json`.
+
+## Local setup
+
+Backend:
+
+```powershell
+cd C:\web_dev\fix_mate\fix_mate_back_end
+Copy-Item .env.example .env
+# Fill MONGODB_URI, BETTER_AUTH_SECRET, Stripe keys, and upload settings.
+npm install
+npm run seed
+npm run dev
+```
+
+Frontend:
+
+```powershell
+cd C:\web_dev\fix_mate\fix_mate_front_end
+# Create .env.local from .env.example and set API_URL / NEXT_PUBLIC_API_URL.
+npm install
+npm run dev
+```
+
+URLs:
+
+```text
+Frontend: http://localhost:3000
+Backend:  http://localhost:4000
+Health:   http://localhost:4000/api/v1/health
+```
+
+## Environment variables
+
+Backend `.env`:
+
+```env
+PORT=4000
+MONGODB_URI=
+MONGODB_DB=fixmate
+BETTER_AUTH_SECRET=
+JWT_SECRET=
+JWT_EXPIRES_IN=7d
+BETTER_AUTH_URL=https://api.your-domain.com
+FRONTEND_URL=https://your-domain.com
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
+SEED_PASSWORD=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+UPLOAD_DRIVER=imgbb
+IMGBB_API_KEY=
+```
+
+Optional S3/R2 settings: `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`,
+`S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_PUBLIC_URL`,
+`S3_FORCE_PATH_STYLE`.
+
+Frontend `.env.local`:
+
+```env
+API_URL=https://api.your-domain.com
+NEXT_PUBLIC_API_URL=https://api.your-domain.com
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+```
+
+## API overview
+
+The frontend uses the versioned API:
+
+```text
+/api/v1/...
+```
+
+Assignment compatibility aliases are also available at the exact documented
+paths:
+
+```text
+POST   /api/bookings
+PATCH  /api/bookings/:id/cancel
+GET    /api/bookings/my
+POST   /api/payments/create-checkout-session
+POST   /api/services
+PATCH  /api/services/:id
+DELETE /api/services/:id
+GET    /api/bookings/technician
+PATCH  /api/bookings/:id/status
+GET    /api/admin/users
+PATCH  /api/admin/users/:id/role
+PATCH  /api/admin/services/:id/approval
+GET    /api/admin/bookings
+GET    /api/admin/payments
+PATCH  /api/users/profile
+GET    /api/services
+GET    /api/services/:id
+```
+
+Public catalog routes need no token. All other compatibility routes require a
+JWT or a valid Better Auth session and the correct role.
+
+## Deployment notes
+
+1. Create a MongoDB Atlas cluster and set `MONGODB_URI`.
+2. Deploy the backend and set `BETTER_AUTH_URL` / `FRONTEND_URL` to the public
+   origins.
+3. Deploy the frontend and set `API_URL` / `NEXT_PUBLIC_API_URL`.
+4. Add the deployed Stripe webhook:
+   `https://api.your-domain.com/api/v1/webhooks/stripe`
+   with `checkout.session.completed` and `payment_intent.succeeded`.
+5. Set `UPLOAD_DRIVER=imgbb` and `IMGBB_API_KEY`, or configure S3/R2.
+6. Run `npm run seed` and `npx tsx scripts/migrate-schema.ts` against Atlas.
+7. Test sign-up, booking, payment, review, upload, and reload behavior on the
+   live site.
+
+## Known limitations
+
+- The live URL must be added after deployment.
+- The strict “exactly four MongoDB collections” wording is covered by the four
+  core collections plus optional review, technician-profile, and audit
+  extensions.
+- The JWT middleware keeps a Better Auth session fallback for server-rendered
+  pages; invalid JWTs still return 401.
+- Real ImgBB uploads require a valid `IMGBB_API_KEY`.
+
+---
+
 # FixMate Fullstack Backend Plan
 
 This document is the implementation contract for moving FixMate from a Next.js frontend with static preview data to a fullstack app with a **separate Express API server**.
