@@ -328,8 +328,8 @@ export function AdminServiceApproval({
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      {service.approval === "pending" ? (
-                        <div className="flex gap-1.5">
+                      <div className="flex gap-1.5">
+                        {service.approval !== "rejected" && (
                           <button
                             type="button"
                             onClick={() => openRejectDialog(service)}
@@ -339,6 +339,8 @@ export function AdminServiceApproval({
                             <X className="size-3.5" />
                             Reject
                           </button>
+                        )}
+                        {service.approval !== "approved" && (
                           <button
                             type="button"
                             onClick={() => approveService(service)}
@@ -348,16 +350,8 @@ export function AdminServiceApproval({
                             <Check className="size-3.5" />
                             Approve
                           </button>
-                        </div>
-                      ) : service.approval === "approved" ? (
-                        <span className="text-[9.5px] text-[#87948d]">
-                          Approved
-                        </span>
-                      ) : (
-                        <span className="text-[9.5px] text-[#87948d]">
-                          Awaiting resubmission
-                        </span>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -416,33 +410,27 @@ export function AdminServiceApproval({
               </div>
 
               <div className="mt-3 flex items-center justify-end gap-2">
-                {service.approval === "pending" ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => openRejectDialog(service)}
-                      disabled={pendingId === service.id}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-[7px] px-2.5 text-[10.5px] font-semibold text-[#b42318] disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#ff8f82]"
-                    >
-                      <X className="size-3.5" />
-                      Reject
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => approveService(service)}
-                      disabled={pendingId === service.id}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#3ddc97] px-3 text-[10.5px] font-semibold text-[#06231b] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <Check className="size-3.5" />
-                      Approve
-                    </button>
-                  </>
-                ) : (
-                  <span className="text-[9.5px] text-[#87948d]">
-                    {service.approval === "approved"
-                      ? "Approved"
-                      : "Awaiting resubmission"}
-                  </span>
+                {service.approval !== "rejected" && (
+                  <button
+                    type="button"
+                    onClick={() => openRejectDialog(service)}
+                    disabled={pendingId === service.id}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-[7px] px-2.5 text-[10.5px] font-semibold text-[#b42318] disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#ff8f82]"
+                  >
+                    <X className="size-3.5" />
+                    Reject
+                  </button>
+                )}
+                {service.approval !== "approved" && (
+                  <button
+                    type="button"
+                    onClick={() => approveService(service)}
+                    disabled={pendingId === service.id}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#3ddc97] px-3 text-[10.5px] font-semibold text-[#06231b] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Check className="size-3.5" />
+                    Approve
+                  </button>
                 )}
               </div>
             </div>

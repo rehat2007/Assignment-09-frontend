@@ -52,7 +52,7 @@ export function AdminUsers({
 
   async function changeRole(
     id: string,
-    role: "customer" | "technician",
+    role: "customer" | "technician" | "admin",
   ) {
     if (pendingId) return;
 
@@ -261,7 +261,11 @@ export function AdminUsers({
                         value={user.role}
                         onChange={(event) => {
                           const next = event.target.value;
-                          if (next === "customer" || next === "technician") {
+                          if (
+                            next === "customer" ||
+                            next === "technician" ||
+                            next === "admin"
+                          ) {
                             changeRole(user.id, next);
                           }
                         }}
@@ -271,9 +275,7 @@ export function AdminUsers({
                       >
                         <option value="customer">Customer</option>
                         <option value="technician">Technician</option>
-                        <option value="admin" disabled>
-                          Admin
-                        </option>
+                        <option value="admin">Admin</option>
                       </select>
                       {isSelf && (
                         <p className="mt-1 text-[9.5px] text-[#87948d]">
@@ -374,7 +376,11 @@ export function AdminUsers({
                       value={user.role}
                       onChange={(event) => {
                         const next = event.target.value;
-                        if (next === "customer" || next === "technician") {
+                        if (
+                          next === "customer" ||
+                          next === "technician" ||
+                          next === "admin"
+                        ) {
                           changeRole(user.id, next);
                         }
                       }}
@@ -384,9 +390,7 @@ export function AdminUsers({
                     >
                       <option value="customer">Customer</option>
                       <option value="technician">Technician</option>
-                      <option value="admin" disabled>
-                        Admin
-                      </option>
+                      <option value="admin">Admin</option>
                     </select>
                   </div>
                   <div>
