@@ -31,16 +31,21 @@ export function BookingRequestDialog({
   serviceTitle,
   defaultPhone = "",
   defaultArea = "",
+  customerName,
+  customerEmail,
 }: {
   serviceSlug: string;
   serviceTitle: string;
   defaultPhone?: string;
   defaultArea?: string;
+  customerName: string;
+  customerEmail: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [problemLength, setProblemLength] = useState(0);
   const [{ today, tomorrow }] = useState(() => {
     const todayDate = new Date();
     const tomorrowDate = new Date(todayDate);
@@ -76,6 +81,7 @@ export function BookingRequestDialog({
     if (pending) return;
     setOpen(false);
     setError("");
+    setProblemLength(0);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -116,6 +122,7 @@ export function BookingRequestDialog({
 
       setOpen(false);
       setPending(false);
+      setProblemLength(0);
       router.push("/dashboard/customer/bookings");
       router.refresh();
     } catch (caught) {
@@ -194,6 +201,30 @@ export function BookingRequestDialog({
 
                 <div className="grid gap-3.5 sm:grid-cols-2">
                   <label className="text-[11.5px] font-semibold text-[#27352f] dark:text-[#cfdbd3]">
+                    Name
+                    <input
+                      type="text"
+                      value={customerName}
+                      readOnly
+                      aria-readonly="true"
+                      className={`${INPUT} cursor-not-allowed bg-[#f7f5ef] text-[#5f6f68] dark:bg-white/[0.03] dark:text-[#9dab9f]`}
+                    />
+                  </label>
+
+                  <label className="text-[11.5px] font-semibold text-[#27352f] dark:text-[#cfdbd3]">
+                    Email
+                    <input
+                      type="email"
+                      value={customerEmail}
+                      readOnly
+                      aria-readonly="true"
+                      className={`${INPUT} cursor-not-allowed bg-[#f7f5ef] text-[#5f6f68] dark:bg-white/[0.03] dark:text-[#9dab9f]`}
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  <label className="text-[11.5px] font-semibold text-[#27352f] dark:text-[#cfdbd3]">
                     Preferred date
                     <input
                       type="date"
@@ -245,13 +276,19 @@ export function BookingRequestDialog({
                   <textarea
                     name="problem"
                     required
-                    minLength={5}
+                    minLength={20}
                     maxLength={2000}
                     rows={4}
+                    onChange={(event) =>
+                      setProblemLength(event.target.value.trim().length)
+                    }
                     placeholder="Describe the fault, when it started, and anything the technician should know."
                     disabled={pending}
                     className="mt-1.5 w-full resize-none rounded-[9px] border border-[#e5e1d6] bg-white px-3.5 py-2.5 text-[12.5px] leading-[1.6] text-[#0f1a15] outline-none transition placeholder:text-[#87948d] focus:border-[#0e6b54] focus:ring-[3px] focus:ring-[#0e6b54]/10 disabled:opacity-60 dark:border-[#263a30] dark:bg-[#0b1510] dark:text-white dark:focus:border-[#43d3ab]"
                   />
+                  <span className="mt-1 block text-right text-[10px] font-normal text-[#87948d]">
+                    {problemLength}/2000 characters · minimum 20
+                  </span>
                 </label>
 
                 <div className="flex flex-col-reverse gap-2 border-t border-[#e5e1d6] pt-4 sm:flex-row sm:justify-end dark:border-white/[0.08]">

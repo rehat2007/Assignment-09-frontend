@@ -446,6 +446,8 @@ export default async function ServiceDetailPage({ params }: Props) {
                       serviceTitle={service.title}
                       defaultPhone={user.phone ?? ""}
                       defaultArea={user.area ?? ""}
+                      customerName={user.name}
+                      customerEmail={user.email}
                     />
                     <p className="flex items-center justify-center gap-1.5 text-center text-[11px] leading-[1.5] text-[#87948d]">
                       <ShieldCheck className="size-3.5 shrink-0" />
