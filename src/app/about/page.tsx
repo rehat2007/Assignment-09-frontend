@@ -19,9 +19,9 @@ import { HomeMotion } from "@/components/home-motion";
 import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
-  title: "How FixMate works — FixMate",
+  title: "About FixMate — FixMate",
   description:
-    "A tracked repair from request to payment. See the job pipeline, the rules behind it, and the questions customers ask most.",
+    "Why FixMate exists, how the tracked repair pipeline works, and the rules that keep customers and technicians protected.",
 };
 
 const PIPELINE = [
@@ -151,7 +151,7 @@ export default function HowItWorksPage() {
               </Link>
               <ChevronRight className="size-3" />
               <span className="text-[#27352f] dark:text-[#cfdbd3]">
-                How it works
+                About
               </span>
             </nav>
 

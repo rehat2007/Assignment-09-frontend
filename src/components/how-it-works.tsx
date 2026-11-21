@@ -21,7 +21,7 @@ export function HowItWorks() {
           </div>
 
           <a
-            href="/how-it-works"
+            href="/about"
             className="flex w-fit items-center gap-2 text-[13.5px] font-semibold text-[#27352f] transition-colors hover:text-[#0e6b54] dark:text-white dark:hover:text-[#43d3ab]"
           >
             Read the full story

@@ -22,7 +22,7 @@ import { getAppRole } from "@/lib/roles";
 const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Services", href: "/services" },
-  { label: "How it works", href: "/how-it-works" },
+  { label: "About", href: "/about" },
 ];
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";

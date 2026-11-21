@@ -13,7 +13,7 @@ import { Brand } from "@/components/brand";
 const QUICK_LINKS = [
   { label: "Home", href: "/" },
   { label: "Browse services", href: "/services" },
-  { label: "How it works", href: "/how-it-works" },
+  { label: "About", href: "/about" },
   { label: "Become a technician", href: "/sign-up" },
   { label: "Sign in", href: "/sign-in" },
 ];
