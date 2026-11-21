@@ -7,6 +7,7 @@ import {
   Receipt,
   ShieldCheck,
 } from "lucide-react";
+import { PaymentSuccessToast } from "@/components/payment/payment-toast";
 import { SiteFooter } from "@/components/site-footer";
 import { getPaymentVerification } from "@/lib/customer-api";
 import { formatDate, money, type CustomerPayment } from "@/lib/customer-data";
@@ -45,6 +46,12 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
   return (
     <>
       <main className="flex-1 bg-[#f6f4ee] dark:bg-[#080f0c]">
+        {payment && (
+          <PaymentSuccessToast
+            amount={payment.amount}
+            transactionId={payment.transactionId}
+          />
+        )}
         <div className="mx-auto flex max-w-[760px] flex-col px-6 py-12 sm:py-16">
           <section className="overflow-hidden rounded-[20px] border border-[#e5e1d6] bg-white shadow-[0_18px_40px_-30px_rgba(15,26,21,0.35)] dark:border-white/[0.08] dark:bg-[#101a16]">
             <div

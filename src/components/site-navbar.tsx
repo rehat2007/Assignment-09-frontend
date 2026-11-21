@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   LayoutDashboard,
   LogOut,
@@ -51,6 +52,7 @@ export function SiteNavbar() {
       fetchOptions: {
         onSuccess: () => {
           setMobileMenuOpen(false);
+          toast.success("Signed out.");
           router.push("/");
           router.refresh();
         },

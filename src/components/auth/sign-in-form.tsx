@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 import { GoogleIcon } from "@/components/auth/google-icon";
 import { authClient } from "@/lib/auth-client";
 
@@ -32,11 +33,15 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
     });
 
     if (authError) {
-      setError(authError.message || "Unable to sign in. Please try again.");
+      const message =
+        authError.message || "Unable to sign in. Please try again.";
+      setError(message);
+      toast.error(message);
       setPending(false);
       return;
     }
 
+    toast.success("Signed in successfully.");
     router.push("/dashboard");
     router.refresh();
   }
@@ -54,7 +59,10 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
     });
 
     if (authError) {
-      setError(authError.message || "Google sign-in is unavailable.");
+      const message =
+        authError.message || "Google sign-in is unavailable.";
+      setError(message);
+      toast.error(message);
       setPending(false);
     }
   }

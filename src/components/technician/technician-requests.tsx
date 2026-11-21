@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { createPortal } from "react-dom";
 import {
   AlertTriangle,
@@ -49,7 +50,6 @@ export function TechnicianRequests({
 }) {
   const [requests, setRequests] = useState(initialRequests);
   const [filter, setFilter] = useState<BookingStatus | "all">("all");
-  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [completing, setCompleting] = useState<TechnicianRequest | null>(null);
@@ -87,7 +87,6 @@ export function TechnicianRequests({
     if (pendingId) return;
 
     setPendingId(request.id);
-    setNotice("");
     setError("");
 
     try {
@@ -121,13 +120,14 @@ export function TechnicianRequests({
       setRequests((current) =>
         current.map((item) => (item.id === request.id ? updated : item)),
       );
-      setNotice(successMessage);
+      toast.success(successMessage);
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not update this request.",
-      );
+          : "Could not update this request.";
+      setError(message);
+      toast.error(message);
     } finally {
       setPendingId(null);
     }
@@ -187,13 +187,14 @@ export function TechnicianRequests({
         current.map((item) => (item.id === completing.id ? updated : item)),
       );
       setCompleting(null);
-      setNotice("Job completed. The final amount was saved.");
+      toast.success("Job completed. The final amount was saved.");
     } catch (caught) {
-      setCompletionError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not complete this request.",
-      );
+          : "Could not complete this request.";
+      setCompletionError(message);
+      toast.error(message);
     } finally {
       setCompletionPending(false);
     }
@@ -228,15 +229,6 @@ export function TechnicianRequests({
         >
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
           {error}
-        </p>
-      )}
-
-      {notice && (
-        <p
-          role="status"
-          className="mt-4 rounded-[9px] border border-[#0e6b54]/20 bg-[#e4f2ec] px-3 py-2.5 text-[11.5px] text-[#0e6b54] dark:border-[#43d3ab]/20 dark:bg-[#112c25] dark:text-[#43d3ab]"
-        >
-          {notice}
         </p>
       )}
 

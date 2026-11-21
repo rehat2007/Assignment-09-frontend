@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Send, Star, X } from "lucide-react";
+import { toast } from "sonner";
 import { revalidateCatalog } from "@/app/actions";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -101,11 +102,12 @@ export function CustomerReviewDialog({
       void revalidateCatalog();
       onSubmitted();
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not submit the review.",
-      );
+          : "Could not submit the review.";
+      setError(message);
+      toast.error(message);
       setPending(false);
     }
   }

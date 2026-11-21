@@ -19,6 +19,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { GoogleIcon } from "@/components/auth/google-icon";
 import { authClient } from "@/lib/auth-client";
 
@@ -104,9 +105,10 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
     });
 
     if (authError) {
-      setError(
-        authError.message || "Unable to create your account. Please try again.",
-      );
+      const message =
+        authError.message || "Unable to create your account. Please try again.";
+      setError(message);
+      toast.error(message);
       setPending(false);
       return;
     }
@@ -137,6 +139,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
       }
     }
 
+    toast.success("Account created successfully.");
     router.push("/dashboard");
     router.refresh();
   }
@@ -154,7 +157,10 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
     });
 
     if (authError) {
-      setError(authError.message || "Google sign-up is unavailable.");
+      const message =
+        authError.message || "Google sign-up is unavailable.";
+      setError(message);
+      toast.error(message);
       setPending(false);
     }
   }

@@ -18,6 +18,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { cn } from "cn";
+import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import type { AppRole } from "@/lib/roles";
 
@@ -145,7 +146,9 @@ export function ProfileForm({
         };
         const message =
           typeof data.error === "string" ? data.error : data.error?.message;
-        setError(message ?? "Could not upload the photo.");
+        const display = message ?? "Could not upload the photo.";
+        setError(display);
+        toast.error(display);
         setPending(false);
         return;
       }
@@ -157,6 +160,7 @@ export function ProfileForm({
 
       if (!url) {
         setError("Could not upload the photo.");
+        toast.error("Could not upload the photo.");
         setPending(false);
         return;
       }
@@ -173,7 +177,10 @@ export function ProfileForm({
     });
 
     if (authError) {
-      setError(authError.message || "Could not update your profile.");
+      const message =
+        authError.message || "Could not update your profile.";
+      setError(message);
+      toast.error(message);
       setPending(false);
       return;
     }
@@ -188,6 +195,7 @@ export function ProfileForm({
     if (fileRef.current) fileRef.current.value = "";
     setPending(false);
     setSuccess("Profile updated.");
+    toast.success("Profile updated.");
     await authClient.getSession();
     router.refresh();
   }

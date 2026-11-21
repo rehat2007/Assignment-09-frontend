@@ -8,6 +8,7 @@ import {
   Pencil,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { CATEGORIES } from "@/lib/services";
 import type { TechnicianService } from "@/lib/technician-data";
 
@@ -76,11 +77,12 @@ export function EditServiceDialog({
       setOpen(false);
       setPending(false);
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not update this listing.",
-      );
+          : "Could not update this listing.";
+      setError(message);
+      toast.error(message);
       setPending(false);
     }
   }

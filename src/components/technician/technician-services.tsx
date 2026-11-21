@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import { CategoryTile } from "@/components/customer/category-tile";
@@ -38,7 +39,6 @@ export function TechnicianServices({
 }) {
   const [services, setServices] = useState(initialServices);
   const [filter, setFilter] = useState<TechnicianApproval | "all">("all");
-  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
 
@@ -73,7 +73,7 @@ export function TechnicianServices({
         service.id === updated.id ? updated : service,
       ),
     );
-    setNotice(
+    toast.success(
       "Listing updated. Approved or rejected listings return to pending review.",
     );
     setError("");
@@ -84,7 +84,6 @@ export function TechnicianServices({
     if (pendingId) return;
 
     setPendingId(service.id);
-    setNotice("");
     setError("");
 
     try {
@@ -114,18 +113,19 @@ export function TechnicianServices({
       setServices((current) =>
         current.map((item) => (item.id === service.id ? updated : item)),
       );
-      setNotice(
+      toast.success(
         updated.available
           ? "Listing is live in the marketplace."
           : "Listing paused and hidden from the public catalog.",
       );
       void revalidateCatalog();
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not update availability.",
-      );
+          : "Could not update availability.";
+      setError(message);
+      toast.error(message);
     } finally {
       setPendingId(null);
     }
@@ -143,7 +143,6 @@ export function TechnicianServices({
     if (pendingId) return;
 
     setPendingId(service.id);
-    setNotice("");
     setError("");
 
     try {
@@ -167,14 +166,15 @@ export function TechnicianServices({
       setServices((current) =>
         current.filter((item) => item.id !== service.id),
       );
-      setNotice("Listing removed from the marketplace.");
+      toast.success("Listing removed from the marketplace.");
       void revalidateCatalog();
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not remove this listing.",
-      );
+          : "Could not remove this listing.";
+      setError(message);
+      toast.error(message);
     } finally {
       setPendingId(null);
     }
@@ -208,15 +208,6 @@ export function TechnicianServices({
         >
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
           {error}
-        </p>
-      )}
-
-      {notice && (
-        <p
-          role="status"
-          className="mt-4 rounded-[9px] border border-[#0e6b54]/20 bg-[#e4f2ec] px-3 py-2.5 text-[11.5px] text-[#0e6b54] dark:border-[#43d3ab]/20 dark:bg-[#112c25] dark:text-[#43d3ab]"
-        >
-          {notice}
         </p>
       )}
 

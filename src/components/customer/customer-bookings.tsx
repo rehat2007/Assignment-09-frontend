@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   ArrowRight,
@@ -43,7 +44,6 @@ export function CustomerBookings({
 }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [filter, setFilter] = useState<BookingStatus | "all">("all");
-  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
@@ -74,7 +74,6 @@ export function CustomerBookings({
     if (pendingId) return;
 
     setPendingId(id);
-    setNotice("");
     setError("");
 
     try {
@@ -102,14 +101,15 @@ export function CustomerBookings({
       setBookings((current) =>
         current.map((booking) => (booking.id === id ? updated : booking)),
       );
-      setNotice("Request cancelled. The technician has been notified.");
+      toast.success("Request cancelled. The technician has been notified.");
       router.refresh();
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not cancel this booking.",
-      );
+          : "Could not cancel this booking.";
+      setError(message);
+      toast.error(message);
     } finally {
       setPendingId(null);
     }
@@ -121,7 +121,7 @@ export function CustomerBookings({
         booking.id === id ? { ...booking, reviewed: true } : booking,
       ),
     );
-    setNotice("Review posted. Thanks for helping other customers.");
+    toast.success("Review posted. Thanks for helping other customers.");
     router.refresh();
   }
 
@@ -129,7 +129,6 @@ export function CustomerBookings({
     if (checkoutId) return;
 
     setCheckoutId(booking.id);
-    setNotice("");
     setError("");
 
     try {
@@ -155,11 +154,12 @@ export function CustomerBookings({
 
       window.location.href = body.data.url;
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not start checkout.",
-      );
+          : "Could not start checkout.";
+      setError(message);
+      toast.error(message);
       setCheckoutId(null);
     }
   }
@@ -192,15 +192,6 @@ export function CustomerBookings({
         >
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
           {error}
-        </p>
-      )}
-
-      {notice && (
-        <p
-          role="status"
-          className="mt-4 rounded-[9px] border border-[#0e6b54]/20 bg-[#e4f2ec] px-3 py-2.5 text-[11.5px] text-[#0e6b54] dark:border-[#43d3ab]/20 dark:bg-[#112c25] dark:text-[#43d3ab]"
-        >
-          {notice}
         </p>
       )}
 

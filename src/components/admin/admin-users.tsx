@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Ban, Eye, Lock, RotateCcw, Search, X } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "cn";
 import type { AdminRole, AdminUser } from "@/lib/admin-data";
 import { formatDate } from "@/lib/customer-data";
@@ -34,7 +35,6 @@ export function AdminUsers({
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<AdminRole | "all">("all");
   const [selected, setSelected] = useState<AdminUser | null>(null);
-  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
 
@@ -57,7 +57,6 @@ export function AdminUsers({
     if (pendingId) return;
 
     setPendingId(id);
-    setNotice("");
     setError("");
 
     try {
@@ -83,13 +82,14 @@ export function AdminUsers({
         current.map((user) => (user.id === id ? updated : user)),
       );
       setSelected((current) => (current?.id === id ? updated : current));
-      setNotice(`${updated.name} is now ${ROLE_LABEL[updated.role]}.`);
+      toast.success(`${updated.name} is now ${ROLE_LABEL[updated.role]}.`);
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not change this role.",
-      );
+          : "Could not change this role.";
+      setError(message);
+      toast.error(message);
     } finally {
       setPendingId(null);
     }
@@ -100,7 +100,6 @@ export function AdminUsers({
 
     const isSuspended = Boolean(user.banned);
     setPendingId(user.id);
-    setNotice("");
     setError("");
 
     try {
@@ -136,17 +135,18 @@ export function AdminUsers({
       setSelected((current) =>
         current?.id === user.id ? updated : current,
       );
-      setNotice(
+      toast.success(
         isSuspended
           ? `${user.name} restored.`
           : `${user.name} suspended.`,
       );
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not update this account.",
-      );
+          : "Could not update this account.";
+      setError(message);
+      toast.error(message);
     } finally {
       setPendingId(null);
     }
@@ -177,15 +177,6 @@ export function AdminUsers({
         >
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
           {error}
-        </p>
-      )}
-
-      {notice && (
-        <p
-          role="status"
-          className="mt-4 rounded-[9px] border border-[#0e6b54]/20 bg-[#e4f2ec] px-3 py-2.5 text-[11.5px] text-[#0e6b54] dark:border-[#43d3ab]/20 dark:bg-[#112c25] dark:text-[#43d3ab]"
-        >
-          {notice}
         </p>
       )}
 

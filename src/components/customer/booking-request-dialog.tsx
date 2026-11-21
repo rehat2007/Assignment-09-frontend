@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   CalendarDays,
@@ -123,14 +124,16 @@ export function BookingRequestDialog({
       setOpen(false);
       setPending(false);
       setProblemLength(0);
+      toast.success("Repair request sent. Track it in My Bookings.");
       router.push("/dashboard/customer/bookings");
       router.refresh();
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not send your request.",
-      );
+          : "Could not send your request.";
+      setError(message);
+      toast.error(message);
       setPending(false);
     }
   }

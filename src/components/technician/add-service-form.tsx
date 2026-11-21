@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Briefcase,
@@ -174,14 +175,16 @@ export function AddServiceForm({
       }
 
       setPending(false);
+      toast.success("Service submitted for admin approval.");
       router.push("/dashboard/technician/my-services");
       router.refresh();
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not submit this listing.",
-      );
+          : "Could not submit this listing.";
+      setError(message);
+      toast.error(message);
       setPending(false);
     }
   }

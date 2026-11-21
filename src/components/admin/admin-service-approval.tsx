@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, X } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "cn";
 import { CategoryTile } from "@/components/customer/category-tile";
 import { revalidateCatalog } from "@/app/actions";
@@ -42,7 +43,6 @@ export function AdminServiceApproval({
 }) {
   const [services, setServices] = useState(initialServices);
   const [filter, setFilter] = useState<AdminApproval | "all">("all");
-  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
 
@@ -77,7 +77,6 @@ export function AdminServiceApproval({
     if (pendingId) return;
 
     setPendingId(service.id);
-    setNotice("");
     setError("");
 
     try {
@@ -100,14 +99,15 @@ export function AdminServiceApproval({
       setServices((current) =>
         current.map((item) => (item.id === service.id ? updated : item)),
       );
-      setNotice(`${service.title} approved and published.`);
+      toast.success(`${service.title} approved and published.`);
       void revalidateCatalog();
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not approve this listing.",
-      );
+          : "Could not approve this listing.";
+      setError(message);
+      toast.error(message);
     } finally {
       setPendingId(null);
     }
@@ -125,11 +125,11 @@ export function AdminServiceApproval({
 
     if (!reason.trim()) {
       setError("Enter a rejection reason.");
+      toast.error("Enter a rejection reason.");
       return;
     }
 
     setPendingId(service.id);
-    setNotice("");
     setError("");
 
     try {
@@ -154,14 +154,17 @@ export function AdminServiceApproval({
       setServices((current) =>
         current.map((item) => (item.id === service.id ? updated : item)),
       );
-      setNotice(`${service.title} rejected. The reason is stored for the technician.`);
+      toast.success(
+        `${service.title} rejected. The reason is stored for the technician.`,
+      );
       void revalidateCatalog();
     } catch (caught) {
-      setError(
+      const message =
         caught instanceof Error
           ? caught.message
-          : "Could not reject this listing.",
-      );
+          : "Could not reject this listing.";
+      setError(message);
+      toast.error(message);
     } finally {
       setPendingId(null);
     }
@@ -195,15 +198,6 @@ export function AdminServiceApproval({
         >
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
           {error}
-        </p>
-      )}
-
-      {notice && (
-        <p
-          role="status"
-          className="mt-4 rounded-[9px] border border-[#0e6b54]/20 bg-[#e4f2ec] px-3 py-2.5 text-[11.5px] text-[#0e6b54] dark:border-[#43d3ab]/20 dark:bg-[#112c25] dark:text-[#43d3ab]"
-        >
-          {notice}
         </p>
       )}
 
