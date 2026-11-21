@@ -17,6 +17,7 @@ import { cn } from "cn";
 import { BookingTimeline, StatusBadge } from "@/components/customer/booking-status";
 import { CustomerReviewDialog } from "@/components/customer/customer-review-dialog";
 import { ServiceThumbnail } from "@/components/service-thumbnail";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   BOOKING_STATUS_LABEL,
   type BookingStatus,
@@ -47,6 +48,9 @@ export function CustomerBookings({
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<CustomerBooking | null>(
+    null,
+  );
   const router = useRouter();
 
   const counts = useMemo(
@@ -112,6 +116,7 @@ export function CustomerBookings({
       toast.error(message);
     } finally {
       setPendingId(null);
+      setCancelTarget(null);
     }
   }
 
@@ -152,7 +157,7 @@ export function CustomerBookings({
         );
       }
 
-      window.location.href = body.data.url;
+      window.location.assign(body.data.url);
     } catch (caught) {
       const message =
         caught instanceof Error
@@ -293,7 +298,7 @@ export function CustomerBookings({
                 {booking.status === "requested" && (
                   <button
                     type="button"
-                    onClick={() => cancelBooking(booking.id)}
+                    onClick={() => setCancelTarget(booking)}
                     disabled={pendingId !== null}
                     className="inline-flex h-8 items-center rounded-[7px] border border-[#d2ccbc] px-3 text-[11px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:text-white dark:hover:bg-white/[0.04]"
                   >
@@ -396,6 +401,28 @@ export function CustomerBookings({
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(cancelTarget)}
+        title="Cancel this request?"
+        description={
+          cancelTarget
+            ? `Cancel ${cancelTarget.title} (#${
+                cancelTarget.bookingNumber ?? cancelTarget.id.toUpperCase()
+              })? The technician will be notified and the request cannot be restored.`
+            : ""
+        }
+        confirmLabel="Cancel request"
+        cancelLabel="Keep request"
+        destructive
+        pending={pendingId === cancelTarget?.id}
+        onConfirm={() => {
+          if (cancelTarget) void cancelBooking(cancelTarget.id);
+        }}
+        onClose={() => {
+          if (pendingId !== cancelTarget?.id) setCancelTarget(null);
+        }}
+      />
     </div>
   );
 }

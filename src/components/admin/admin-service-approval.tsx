@@ -5,6 +5,7 @@ import { AlertTriangle, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { ServiceThumbnail } from "@/components/service-thumbnail";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { revalidateCatalog } from "@/app/actions";
 import {
   type AdminApproval,
@@ -45,6 +46,10 @@ export function AdminServiceApproval({
   const [filter, setFilter] = useState<AdminApproval | "all">("all");
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<AdminService | null>(null);
+  const [rejectReason, setRejectReason] = useState(
+    "Does not meet the listing guidelines.",
+  );
 
   const counts = useMemo(
     () =>
@@ -113,33 +118,36 @@ export function AdminServiceApproval({
     }
   }
 
-  async function rejectService(service: AdminService) {
-    if (pendingId) return;
+  function openRejectDialog(service: AdminService) {
+    setRejectTarget(service);
+    setRejectReason("Does not meet the listing guidelines.");
+    setError("");
+  }
 
-    const reason = window.prompt(
-      `Reason for rejecting "${service.title}"`,
-      "Does not meet the listing guidelines.",
-    );
+  async function confirmRejectService() {
+    const target = rejectTarget;
 
-    if (reason === null) return;
+    if (!target || pendingId) return;
 
-    if (!reason.trim()) {
+    const reason = rejectReason.trim();
+
+    if (!reason) {
       setError("Enter a rejection reason.");
       toast.error("Enter a rejection reason.");
       return;
     }
 
-    setPendingId(service.id);
+    setPendingId(target.id);
     setError("");
 
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/admin/services/${service.id}/reject`,
+        `${API_URL}/api/v1/admin/services/${target.id}/reject`,
         {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reason: reason.trim() }),
+          body: JSON.stringify({ reason }),
         },
       );
       const body = (await response.json().catch(() => null)) as
@@ -152,10 +160,11 @@ export function AdminServiceApproval({
 
       const updated = body.data;
       setServices((current) =>
-        current.map((item) => (item.id === service.id ? updated : item)),
+        current.map((item) => (item.id === target.id ? updated : item)),
       );
+      setRejectTarget(null);
       toast.success(
-        `${service.title} rejected. The reason is stored for the technician.`,
+        `${target.title} rejected. The reason is stored for the technician.`,
       );
       void revalidateCatalog();
     } catch (caught) {
@@ -323,7 +332,7 @@ export function AdminServiceApproval({
                         <div className="flex gap-1.5">
                           <button
                             type="button"
-                            onClick={() => rejectService(service)}
+                            onClick={() => openRejectDialog(service)}
                             disabled={pendingId === service.id}
                             className="inline-flex h-8 items-center gap-1.5 rounded-[7px] px-2.5 text-[10.5px] font-semibold text-[#b42318] disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#ff8f82]"
                           >
@@ -411,7 +420,7 @@ export function AdminServiceApproval({
                   <>
                     <button
                       type="button"
-                      onClick={() => rejectService(service)}
+                      onClick={() => openRejectDialog(service)}
                       disabled={pendingId === service.id}
                       className="inline-flex h-8 items-center gap-1.5 rounded-[7px] px-2.5 text-[10.5px] font-semibold text-[#b42318] disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#ff8f82]"
                     >
@@ -454,6 +463,39 @@ export function AdminServiceApproval({
           <span>{visible.length} shown</span>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(rejectTarget)}
+        title="Reject this listing?"
+        description={
+          rejectTarget
+            ? `Reject “${rejectTarget.title}”? The technician will see your reason and the listing will leave the approval queue.`
+            : ""
+        }
+        confirmLabel="Reject listing"
+        cancelLabel="Keep listing"
+        destructive
+        pending={pendingId === rejectTarget?.id}
+        onConfirm={() => void confirmRejectService()}
+        onClose={() => {
+          if (pendingId !== rejectTarget?.id) setRejectTarget(null);
+        }}
+      >
+        <label className="text-[11.5px] font-semibold text-[#27352f] dark:text-[#cfdbd3]">
+          Reason
+          <textarea
+            rows={3}
+            maxLength={500}
+            value={rejectReason}
+            onChange={(event) => setRejectReason(event.target.value)}
+            placeholder="Explain what needs to change before this listing can be approved."
+            className="mt-1.5 w-full resize-none rounded-[9px] border border-[#e5e1d6] bg-white px-3.5 py-2.5 text-[12.5px] leading-[1.6] text-[#0f1a15] outline-none transition placeholder:text-[#87948d] focus:border-[#0e6b54] focus:ring-[3px] focus:ring-[#0e6b54]/10 dark:border-[#263a30] dark:bg-[#0b1510] dark:text-white dark:placeholder:text-[#6f8579] dark:focus:border-[#43d3ab]"
+          />
+          <span className="mt-1 block text-right text-[10px] font-normal text-[#87948d]">
+            {rejectReason.length}/500
+          </span>
+        </label>
+      </ConfirmDialog>
     </div>
   );
 }

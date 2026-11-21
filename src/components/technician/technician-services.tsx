@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import { ServiceThumbnail } from "@/components/service-thumbnail";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EditServiceDialog } from "@/components/technician/edit-service-dialog";
 import { revalidateCatalog } from "@/app/actions";
 import { formatDate, money } from "@/lib/customer-data";
@@ -41,6 +42,9 @@ export function TechnicianServices({
   const [filter, setFilter] = useState<TechnicianApproval | "all">("all");
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<TechnicianService | null>(
+    null,
+  );
 
   const counts = useMemo(
     () =>
@@ -132,14 +136,6 @@ export function TechnicianServices({
   }
 
   async function removeService(service: TechnicianService) {
-    if (
-      !window.confirm(
-        "Remove this listing? It will be hidden from the marketplace.",
-      )
-    ) {
-      return;
-    }
-
     if (pendingId) return;
 
     setPendingId(service.id);
@@ -177,6 +173,7 @@ export function TechnicianServices({
       toast.error(message);
     } finally {
       setPendingId(null);
+      setDeleteTarget(null);
     }
   }
 
@@ -339,7 +336,7 @@ export function TechnicianServices({
                       />
                       <button
                         type="button"
-                        onClick={() => removeService(service)}
+                        onClick={() => setDeleteTarget(service)}
                         disabled={pendingId === service.id}
                         aria-label={`Delete ${service.title}`}
                         className="text-[#b42318] hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#ff8f82]"
@@ -400,7 +397,7 @@ export function TechnicianServices({
                 </span>
                 <button
                   type="button"
-                  onClick={() => removeService(service)}
+                  onClick={() => setDeleteTarget(service)}
                   disabled={pendingId === service.id}
                   aria-label={`Delete ${service.title}`}
                   className="text-[#b42318] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#ff8f82]"
@@ -443,6 +440,26 @@ export function TechnicianServices({
           </span>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Remove this listing?"
+        description={
+          deleteTarget
+            ? `Remove “${deleteTarget.title}” from the marketplace? It will be hidden from customers and cannot be restored from this screen.`
+            : ""
+        }
+        confirmLabel="Remove listing"
+        cancelLabel="Keep listing"
+        destructive
+        pending={pendingId === deleteTarget?.id}
+        onConfirm={() => {
+          if (deleteTarget) void removeService(deleteTarget);
+        }}
+        onClose={() => {
+          if (pendingId !== deleteTarget?.id) setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

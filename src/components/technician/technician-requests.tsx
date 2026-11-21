@@ -17,6 +17,7 @@ import {
 import { cn } from "cn";
 import { StatusBadge } from "@/components/customer/booking-status";
 import { ServiceThumbnail } from "@/components/service-thumbnail";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   type BookingStatus,
   formatDate,
@@ -56,6 +57,9 @@ export function TechnicianRequests({
   const [finalAmount, setFinalAmount] = useState("");
   const [completionError, setCompletionError] = useState("");
   const [completionPending, setCompletionPending] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<TechnicianRequest | null>(
+    null,
+  );
 
   const counts = useMemo(
     () =>
@@ -367,14 +371,7 @@ export function TechnicianRequests({
                         <div className="flex gap-1.5">
                           <button
                             type="button"
-                            onClick={() =>
-                              runAction(
-                                request,
-                                "reject",
-                                "Request rejected.",
-                                { reason: "Rejected by technician" },
-                              )
-                            }
+                            onClick={() => setRejectTarget(request)}
                             disabled={pendingId === request.id}
                             className="inline-flex h-8 items-center rounded-[7px] border border-[#d2ccbc] px-3 text-[10.5px] font-semibold text-[#27352f] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:text-white"
                           >
@@ -509,14 +506,7 @@ export function TechnicianRequests({
                   <>
                     <button
                       type="button"
-                      onClick={() =>
-                        runAction(
-                          request,
-                          "reject",
-                          "Request rejected.",
-                          { reason: "Rejected by technician" },
-                        )
-                      }
+                      onClick={() => setRejectTarget(request)}
                       disabled={pendingId === request.id}
                       className="h-8 rounded-[7px] border border-[#d2ccbc] px-3 text-[10.5px] font-semibold text-[#27352f] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:text-white"
                     >
@@ -699,6 +689,31 @@ export function TechnicianRequests({
           </div>,
           document.body,
         )}
+
+      <ConfirmDialog
+        open={Boolean(rejectTarget)}
+        title="Reject this request?"
+        description={
+          rejectTarget
+            ? `Reject ${rejectTarget.serviceTitle} for ${rejectTarget.customer}? The customer will be notified and the request will be closed.`
+            : ""
+        }
+        confirmLabel="Reject request"
+        cancelLabel="Keep request"
+        destructive
+        pending={pendingId === rejectTarget?.id}
+        onConfirm={() => {
+          if (!rejectTarget) return;
+          const target = rejectTarget;
+          setRejectTarget(null);
+          void runAction(target, "reject", "Request rejected.", {
+            reason: "Rejected by technician",
+          });
+        }}
+        onClose={() => {
+          if (pendingId !== rejectTarget?.id) setRejectTarget(null);
+        }}
+      />
     </div>
   );
 }
