@@ -43,6 +43,7 @@ export function AddServiceForm({
   const [area, setArea] = useState(user.area ?? "");
   const [mode, setMode] = useState<"Home Visit" | "Shop Drop-off">("Home Visit");
   const [cover, setCover] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -58,7 +59,7 @@ export function AddServiceForm({
   function handleCover(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       setError("Choose a JPG, PNG or WEBP image.");
       return;
     }
@@ -69,12 +70,14 @@ export function AddServiceForm({
     if (blobUrl.current) URL.revokeObjectURL(blobUrl.current);
     const url = URL.createObjectURL(file);
     blobUrl.current = url;
+    setCoverFile(file);
     setCover(url);
     setError("");
   }
 
   function sampleCover() {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0e6b54"/><stop offset="1" stop-color="#0b1713"/></linearGradient></defs><rect width="640" height="400" fill="url(#g)"/><g fill="none" stroke="#5ad19a" stroke-width="10" stroke-linecap="round"><rect x="250" y="90" width="140" height="220" rx="26"/><path d="M290 120h60"/><circle cx="320" cy="210" r="44"/><path d="m300 212 16 16 28-32"/></g><text x="320" y="360" fill="#cfeee2" font-family="sans-serif" font-size="22" text-anchor="middle" letter-spacing="2">FIXMATE ${category ? category.toUpperCase() : "SERVICE"}</text></svg>`;
+    setCoverFile(null);
     setCover(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
     setError("");
   }
@@ -113,6 +116,33 @@ export function AddServiceForm({
     setPending(true);
 
     try {
+      let coverImage: string | undefined;
+
+      if (coverFile) {
+        const form = new FormData();
+        form.append("file", coverFile);
+
+        const uploadResponse = await fetch(
+          `${API_URL}/api/v1/uploads/service-cover`,
+          {
+            method: "POST",
+            credentials: "include",
+            body: form,
+          },
+        );
+        const uploadBody = (await uploadResponse.json().catch(() => null)) as
+          | { data?: { url?: string }; error?: { message?: string } }
+          | null;
+
+        if (!uploadResponse.ok || !uploadBody?.data?.url) {
+          throw new Error(
+            uploadBody?.error?.message ?? "Could not upload the cover image.",
+          );
+        }
+
+        coverImage = uploadBody.data.url;
+      }
+
       const response = await fetch(`${API_URL}/api/v1/technician/services`, {
         method: "POST",
         credentials: "include",
@@ -126,6 +156,7 @@ export function AddServiceForm({
           price: Number(price),
           mode,
           includes: [],
+          ...(coverImage ? { coverImage } : {}),
         }),
       });
 
@@ -378,7 +409,7 @@ export function AddServiceForm({
                   {cover ? "Replace the cover image" : "Click to upload or drag an image here"}
                 </span>
                 <span className="text-[10px] text-[#87948d]">
-                  JPG or PNG · up to 5 MB
+                  JPG, PNG or WEBP · up to 5 MB
                 </span>
                 <input
                   ref={fileRef}
@@ -397,8 +428,8 @@ export function AddServiceForm({
                 Use a sample cover
               </button>
               <p className="mt-2 text-[10px] text-[#87948d]">
-                Cover uploads are not saved yet; your listing will use FixMate
-                category art for now.
+                The uploaded image is stored in object storage and used as this
+                listing&apos;s cover. The sample is preview-only.
               </p>
             </div>
 

@@ -478,7 +478,7 @@ export const getSession = cache(async () => {
 - [x] Seed technician profiles and admin role.
 - [x] Seed the 15 listings from `src/lib/services.ts`.
 - [x] Seed includes, warranty, and reviews from `src/lib/service-details.ts`.
-- [ ] Optionally seed preview bookings/payments for demo dashboards. *(Skipped in Phase 1; Phase 4 creates real bookings.)*
+- [x] Optionally seed preview bookings/payments for demo dashboards. *(Implemented in Step 10 as eight idempotent demo bookings across all statuses and two paid demo payments.)*
 - [x] Run indexes once at seed/deploy time, not on every request.
 
 ### Seed data mapping
@@ -722,7 +722,7 @@ The customer “Pay now” button no longer writes `paymentStatus` locally; it s
 - [x] Replace `TechnicianRequests` local status changes with API calls.
 - [x] Replace the completion `window.prompt` with a proper modal if possible.
 
-Cover uploads stay preview-only until Phase 8; new listings store `coverImage: null` and use category art. The technician sidebar counts in `dashboard-shell.tsx` still come from preview arrays until Phase 6. Requested bookings hide customer phone/address until the technician accepts.
+Cover uploads are wired in Phase 8; new listings store the uploaded `coverImage` URL. Listings without a cover keep the category art. The technician sidebar counts in `dashboard-shell.tsx` still come from preview arrays until Phase 6. Requested bookings hide customer phone/address until the technician accepts.
 
 ### Acceptance checks
 
@@ -849,11 +849,11 @@ The live card test used the temporary Stripe endpoint `we_1UeG3lDbTSRRDIHKe7exnR
 
 ### Endpoints
 
-- [ ] `POST /api/v1/bookings/:id/review`
-- [ ] `GET /api/v1/services/:slug/reviews`
+- [x] `POST /api/v1/bookings/:id/review`
+- [x] `GET /api/v1/services/:slug/reviews`
 - [ ] `GET /api/v1/me/reviews` (P2)
-- [ ] `POST /api/v1/uploads/avatar`
-- [ ] `POST /api/v1/uploads/service-cover`
+- [x] `POST /api/v1/uploads/avatar`
+- [x] `POST /api/v1/uploads/service-cover`
 
 ### Review rules
 
@@ -874,15 +874,19 @@ The live card test used the temporary Stripe endpoint `we_1UeG3lDbTSRRDIHKe7exnR
 
 ### Acceptance checks
 
-- [ ] One review per paid booking.
-- [ ] Service rating updates.
-- [ ] Invalid rating/text rejected.
-- [ ] Avatar and cover uploads work in production storage.
-- [ ] Old local-disk route is no longer required.
+- [x] One review per paid booking.
+- [x] Service rating updates.
+- [x] Invalid rating/text rejected.
+- [ ] Avatar and cover uploads work in production storage. *(Code complete and verified with `UPLOAD_DRIVER=local`. Set `UPLOAD_DRIVER=s3` plus the `S3_*` keys to verify a real bucket.)*
+- [x] Old local-disk route is no longer required.
+
+Reviews are created only for the owning customer on a `completed` + `paid` booking. The unique `reviews.bookingId` index enforces one review per booking. Creating a review recomputes `services.ratingAvg` and `services.reviewCount` from visible review documents, and `GET /api/v1/services/:slug/reviews` returns the 5★→1★ percentage breakdown in `meta.distribution` (no frontend hardcoding). Customer booking DTOs now include `reviewed`, which drives the “Leave a review” / “Reviewed” action.
+
+Uploads go through `src/lib/storage.ts`. `UPLOAD_DRIVER=local` (development default) writes to `data/uploads` and serves files from `/api/v1/uploads/files`; `UPLOAD_DRIVER=s3` writes to AWS S3, Cloudflare R2, MinIO, or any S3-compatible bucket. The MIME type is detected from the file bytes (not the browser header or filename), extensions come from that detection, and object keys are server-generated UUIDs. The legacy `/api/v1/uploads/avatars` static mount remains only for files uploaded before Phase 8.
 
 ---
 
-## Phase 9 — Hardening and tests
+## Phase 9 - Hardening and tests
 
 ### Tasks
 
@@ -935,6 +939,10 @@ S3_BUCKET=
 S3_REGION=
 S3_ACCESS_KEY_ID=
 S3_SECRET_ACCESS_KEY=
+# Optional for R2/MinIO and custom/CDN public URLs:
+S3_ENDPOINT=
+S3_PUBLIC_URL=
+S3_FORCE_PATH_STYLE=false
 ADMIN_EMAIL=
 ADMIN_PASSWORD=
 ```
@@ -1116,6 +1124,8 @@ Keep Better Auth fields. Add:
 }
 ```
 
+`bookingId` has a unique index, so a booking can be reviewed only once.
+
 ### `auditLogs`
 
 ```ts
@@ -1204,7 +1214,7 @@ Better Auth provides these. Do not hand-roll them.
 | P0 | GET | `/api/v1/meta` | public | Categories, modes, page size, flags |
 | P0 | GET | `/api/v1/services` | public | Search/filter/sort/paginate |
 | P0 | GET | `/api/v1/services/:slug` | public | Service detail |
-| P0 | GET | `/api/v1/services/:slug/reviews` | public | Paginated reviews |
+| P0 | GET | `/api/v1/services/:slug/reviews` | public | Paginated reviews + rating distribution |
 | P1 | GET | `/api/v1/home` | public | Homepage aggregates |
 | P1 | GET | `/api/v1/technicians/:id` | public | Public technician profile |
 

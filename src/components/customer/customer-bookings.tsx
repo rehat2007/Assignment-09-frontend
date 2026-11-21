@@ -9,11 +9,13 @@ import {
   Clock,
   Plus,
   RotateCcw,
+  Star,
   XCircle,
 } from "lucide-react";
 import { cn } from "cn";
 import { BookingTimeline, StatusBadge } from "@/components/customer/booking-status";
 import { CategoryTile } from "@/components/customer/category-tile";
+import { CustomerReviewDialog } from "@/components/customer/customer-review-dialog";
 import {
   BOOKING_STATUS_LABEL,
   type BookingStatus,
@@ -111,6 +113,16 @@ export function CustomerBookings({
     } finally {
       setPendingId(null);
     }
+  }
+
+  function markReviewed(id: string) {
+    setBookings((current) =>
+      current.map((booking) =>
+        booking.id === id ? { ...booking, reviewed: true } : booking,
+      ),
+    );
+    setNotice("Review posted. Thanks for helping other customers.");
+    router.refresh();
   }
 
   async function startCheckout(booking: CustomerBooking) {
@@ -320,12 +332,27 @@ export function CustomerBookings({
 
                 {booking.status === "completed" &&
                   booking.paymentStatus === "paid" && (
-                    <Link
-                      href="/dashboard/customer/payments"
-                      className="inline-flex h-8 items-center rounded-[7px] border border-[#d2ccbc] px-3 text-[11px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-white/15 dark:text-white dark:hover:bg-white/[0.04]"
-                    >
-                      Invoice
-                    </Link>
+                    <>
+                      {booking.reviewed ? (
+                        <span className="inline-flex h-8 items-center gap-1.5 rounded-[7px] bg-[#0e6b54]/10 px-3 text-[11px] font-semibold text-[#0e6b54] dark:bg-[#63e6b6]/10 dark:text-[#63e6b6]">
+                          <Star className="size-3.5 fill-current" />
+                          Reviewed
+                        </span>
+                      ) : (
+                        <CustomerReviewDialog
+                          bookingId={booking.id}
+                          bookingNumber={booking.bookingNumber}
+                          serviceTitle={booking.title}
+                          onSubmitted={() => markReviewed(booking.id)}
+                        />
+                      )}
+                      <Link
+                        href="/dashboard/customer/payments"
+                        className="inline-flex h-8 items-center rounded-[7px] border border-[#d2ccbc] px-3 text-[11px] font-semibold text-[#27352f] transition hover:bg-[#fbfaf6] dark:border-white/15 dark:text-white dark:hover:bg-white/[0.04]"
+                      >
+                        Invoice
+                      </Link>
+                    </>
                   )}
               </div>
             </div>

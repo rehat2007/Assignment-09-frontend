@@ -28,9 +28,6 @@ import { getServiceBySlug, getServiceReviews } from "@/lib/catalog";
 import { formatDate } from "@/lib/customer-data";
 import { CATEGORY_ICONS, CATEGORY_TONES, TONES } from "@/lib/service-styles";
 
-// Placeholder until Phase 8 replaces this with an aggregation over reviews.
-const REVIEW_DISTRIBUTION = [78, 14, 5, 2, 1];
-
 type Props = {
   params: Promise<{ id: string }>;
 };
@@ -55,7 +52,9 @@ export default async function ServiceDetailPage({ params }: Props) {
 
   if (!service) notFound();
 
-  const reviews = (await getServiceReviews(id, { pageSize: 3 })).data;
+  const reviewResult = await getServiceReviews(id, { pageSize: 3 });
+  const reviews = reviewResult.data;
+  const reviewDistribution = reviewResult.meta.distribution;
   const session = await getSession();
   const user = session?.user ?? null;
   const role = user ? getAppRole(user) : null;
@@ -276,9 +275,9 @@ export default async function ServiceDetailPage({ params }: Props) {
                 </div>
 
                 <div className="grid min-w-[180px] flex-1 gap-1">
-                  {REVIEW_DISTRIBUTION.map((percent, index) => (
+                  {reviewDistribution.map((percent, index) => (
                     <div
-                      key={percent}
+                      key={5 - index}
                       className="flex items-center gap-2 text-[10.5px] text-[#5f6f68] dark:text-[#9dab9f]"
                     >
                       <span className="w-5 shrink-0">{5 - index} ★</span>

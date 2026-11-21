@@ -60,6 +60,11 @@ export type PaginationMeta = {
   totalPages: number;
 };
 
+export type ReviewPaginationMeta = PaginationMeta & {
+  /** Percentages for 5★, 4★, 3★, 2★, 1★. */
+  distribution: number[];
+};
+
 export type ListServicesParams = {
   q?: string;
   category?: string;
@@ -75,6 +80,19 @@ function toPaginationMeta(meta: Record<string, unknown>): PaginationMeta {
     pageSize: Number(meta.pageSize ?? 9),
     total: Number(meta.total ?? 0),
     totalPages: Math.max(1, Number(meta.totalPages ?? 1)),
+  };
+}
+
+function toReviewMeta(meta: Record<string, unknown>): ReviewPaginationMeta {
+  const raw = Array.isArray(meta.distribution) ? meta.distribution : [];
+  const distribution = [0, 1, 2, 3, 4].map((index) => {
+    const value = Number(raw[index] ?? 0);
+    return Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 0;
+  });
+
+  return {
+    ...toPaginationMeta(meta),
+    distribution,
   };
 }
 
@@ -143,6 +161,6 @@ export async function getServiceReviews(
 
   return {
     data,
-    meta: toPaginationMeta(meta),
+    meta: toReviewMeta(meta),
   };
 }

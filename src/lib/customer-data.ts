@@ -21,6 +21,7 @@ export type CustomerBooking = {
   finalAmount: number | null;
   status: BookingStatus;
   paymentStatus: "paid" | "unpaid";
+  reviewed?: boolean;
   updatedAt: string;
 };
 
