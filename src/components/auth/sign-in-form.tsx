@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { GoogleIcon } from "@/components/auth/google-icon";
 import { authClient } from "@/lib/auth-client";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
 const LABEL = "block text-[12.5px] font-semibold text-[#27352f] dark:text-[#cfdbd3]";
 const INPUT =
   "mt-2 h-11 w-full rounded-[10px] border border-[#e5e1d6] bg-white px-3.5 text-[13.5px] text-[#0f1a15] outline-none transition placeholder:text-[#87948d] focus:border-[#0e6b54] focus:ring-[3px] focus:ring-[#0e6b54]/10 disabled:opacity-60 dark:border-[#263a30] dark:bg-[#0b1510] dark:text-white dark:placeholder:text-[#6f8579] dark:focus:border-[#43d3ab]";
@@ -39,6 +41,15 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
       toast.error(message);
       setPending(false);
       return;
+    }
+
+    try {
+      await fetch(`${API_URL}/api/v1/auth/token`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // The dashboard bootstrap will retry; Better Auth sessions still work.
     }
 
     toast.success("Signed in successfully.");

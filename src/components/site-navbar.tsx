@@ -25,6 +25,8 @@ const NAV_LINKS = [
   { label: "How it works", href: "/how-it-works" },
 ];
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
 function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -48,6 +50,11 @@ export function SiteNavbar() {
   const role = user ? getAppRole(user) : null;
 
   async function handleSignOut() {
+    await fetch(`${API_URL}/api/v1/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => undefined);
+
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {

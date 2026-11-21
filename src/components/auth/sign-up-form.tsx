@@ -139,6 +139,15 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
       }
     }
 
+    try {
+      await fetch(`${API_URL}/api/v1/auth/token`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // The dashboard bootstrap will retry; Better Auth sessions still work.
+    }
+
     toast.success("Account created successfully.");
     router.push("/dashboard");
     router.refresh();
