@@ -35,20 +35,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${jakarta.variable} ${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        {/* Apply the saved theme before the page paints to avoid a light/dark flash. */}
+        {/* Every document load starts in dark mode. The toggle can switch to
+            light for the current visit without persisting that choice. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                var savedTheme = localStorage.getItem("fixmate-theme");
-                var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-                  document.documentElement.classList.add("dark");
-                }
-              } catch (error) {
-                // If localStorage is unavailable, fall back to the light theme.
-              }
-            `,
+            __html: `document.documentElement.classList.add("dark");`,
           }}
         />
       </head>

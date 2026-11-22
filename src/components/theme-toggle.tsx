@@ -5,14 +5,7 @@ import { cn } from "cn";
 
 export function ThemeToggle({ className }: { className?: string }) {
   function toggleTheme() {
-    const root = document.documentElement;
-    const isDark = root.classList.toggle("dark");
-
-    try {
-      localStorage.setItem("fixmate-theme", isDark ? "dark" : "light");
-    } catch {
-      // The page still changes theme even if the browser blocks localStorage.
-    }
+    document.documentElement.classList.toggle("dark");
   }
 
   return (

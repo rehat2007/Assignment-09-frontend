@@ -67,7 +67,7 @@ FixMate repair marketplace: Next.js 16 App Router (React 19.3, TypeScript, Tailw
 - Tailwind v4 is CSS-first: no `tailwind.config.*`; tokens and dark mode live in `src/app/globals.css` (`@theme inline`, oklch, `@custom-variant dark`). CSS is compiled by the `@tailwindcss/turbopack` rule in `next.config.ts`, not PostCSS.
 - Public sections use hardcoded hex/arbitrary colors with explicit `dark:` classes, not shadcn tokens. `.site-container` is max 1264px with 14/16/24px gutters; public pages mostly use `mx-auto max-w-[1264px] px-6`, dashboards the same. The navbar is 74px desktop / 64px at ≤760px; anchor sections use `scroll-mt-[74px]`.
 - Section rhythm follows the demo: standard `py-[clamp(52px,6.5vw,92px)]`, tight `py-[clamp(38px,4.5vw,60px)]`, and breakpoints at 381/561/761/861/981/1101px. Category icons/tones come from `src/lib/service-styles.ts`.
-- Theme is `.dark` on `<html>`, persisted in `localStorage` under `fixmate-theme`; `layout.tsx` replays it pre-paint and uses `suppressHydrationWarning`. Keep the key in sync.
+- Theme is `.dark` on `<html>`, applied by `layout.tsx` before paint on every document load; the toggle only switches the current visit (no persistence). Keep `suppressHydrationWarning` on `<html>`.
 - Client components: navbar, profile menu, theme toggle, `HomeMotion`, auth forms, `TokenBootstrap`, dashboard shell/profile form, and the customer/technician/admin action components. Keep new sections server-side unless they need state/effects.
 - `HomeMotion` is the only animation code (GSAP + ScrollTrigger, respects reduced motion). Add `data-hero`, `data-hero-art`, `data-reveal`, `data-reveal-group`, `data-float`/`data-float-delay`, or `data-scan` and mount `<HomeMotion />`; don't write per-section animation code.
 
