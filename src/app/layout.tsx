@@ -56,7 +56,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <TokenBootstrap />
         <SiteNavbar />
         {children}
-        <Toaster richColors position="top-right" closeButton />
+        <Toaster
+          richColors
+          position="top-center"
+          offset={{ top: 18 }}
+          mobileOffset={{ top: 12 }}
+          closeButton
+        />
       </body>
     </html>
   );
