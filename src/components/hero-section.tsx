@@ -25,7 +25,7 @@ const TRUST_ITEMS = [
 export function HeroSection({ categories }: { categories: string[] }) {
   return (
     <section className="relative z-10">
-      <div className="site-container grid items-center gap-[18px] pt-[clamp(32px,4vw,46px)] pb-[clamp(44px,5vw,68px)] min-[861px]:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] min-[861px]:gap-7 min-[1101px]:gap-[56px]">
+      <div className="site-container grid items-center gap-[18px] pt-[clamp(32px,4vw,46px)] pb-[clamp(44px,5vw,68px)] min-[861px]:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] min-[861px]:gap-7 min-[861px]:pb-[86px] min-[861px]:pt-[58px] min-[1101px]:gap-[56px]">
         {/* Left side: headline, search and trust signals */}
         <div data-hero className="flex flex-col gap-5 py-3 min-[861px]:py-6">
           <div className="inline-flex w-fit items-center gap-[9px] rounded-full border border-[#e5e1d6] bg-white py-1.5 pl-[7px] pr-[13px] text-[12.5px] font-medium text-[#27352f] shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-[#d6e4dc]">

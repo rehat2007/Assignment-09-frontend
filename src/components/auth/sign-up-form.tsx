@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleIcon } from "@/components/auth/google-icon";
+import { getAuthErrorMessage } from "@/lib/auth-error";
 import { authClient } from "@/lib/auth-client";
 
 const LABEL = "block text-[12.5px] font-semibold text-[#27352f] dark:text-[#cfdbd3]";
@@ -96,17 +97,30 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
     const accountType =
       form.get("role") === "technician" ? "technician" : "customer";
 
-    const { error: authError } = await authClient.signUp.email({
-      name: String(form.get("name") ?? ""),
-      email: String(form.get("email") ?? ""),
-      password: String(form.get("password") ?? ""),
-      accountType,
-      callbackURL: "/dashboard",
-    });
+    try {
+      const { error: authError } = await authClient.signUp.email({
+        name: String(form.get("name") ?? ""),
+        email: String(form.get("email") ?? ""),
+        password: String(form.get("password") ?? ""),
+        accountType,
+        callbackURL: "/dashboard",
+      });
 
-    if (authError) {
-      const message =
-        authError.message || "Unable to create your account. Please try again.";
+      if (authError) {
+        const message = getAuthErrorMessage(
+          authError,
+          "Unable to create your account. Please try again.",
+        );
+        setError(message);
+        toast.error(message);
+        setPending(false);
+        return;
+      }
+    } catch (caught) {
+      const message = getAuthErrorMessage(
+        caught,
+        "Unable to create your account. Please try again.",
+      );
       setError(message);
       toast.error(message);
       setPending(false);
@@ -159,15 +173,27 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
     setPending(true);
     setError("");
 
-    const { error: authError } = await authClient.signIn.social({
-      provider: "google",
-      // The OAuth callback runs on Express, so return to the frontend origin.
-      callbackURL: `${window.location.origin}/dashboard`,
-    });
+    try {
+      const { error: authError } = await authClient.signIn.social({
+        provider: "google",
+        // The OAuth callback runs on Express, so return to the frontend origin.
+        callbackURL: `${window.location.origin}/dashboard`,
+      });
 
-    if (authError) {
-      const message =
-        authError.message || "Google sign-up is unavailable.";
+      if (authError) {
+        const message = getAuthErrorMessage(
+          authError,
+          "Google sign-up is unavailable.",
+        );
+        setError(message);
+        toast.error(message);
+        setPending(false);
+      }
+    } catch (caught) {
+      const message = getAuthErrorMessage(
+        caught,
+        "Google sign-up is unavailable.",
+      );
       setError(message);
       toast.error(message);
       setPending(false);

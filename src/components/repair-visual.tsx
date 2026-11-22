@@ -17,7 +17,7 @@ export function RepairVisual() {
               Repair in progress
             </h3>
             <p className="mt-0.5 text-[11px] text-[#7f998c]">
-              Job #FM-2481 · Rakib Hasan
+              Job #FM-2481
             </p>
           </div>
 
@@ -84,8 +84,8 @@ export function RepairVisual() {
       {/* Floating verification card */}
       <div
         data-float
-        data-float-delay="-1.4"
-        className="absolute left-0 top-2 z-20 flex w-fit items-center gap-2.5 rounded-[14px] border border-black/[0.06] bg-white/95 p-[10px_13px] shadow-[0_12px_30px_rgba(16,48,34,0.12)] backdrop-blur min-[861px]:left-[10px] min-[861px]:top-[-54px] dark:border-white/10 dark:bg-[#0a1711]/95"
+        data-float-delay="0.6"
+        className="absolute left-0 top-2 z-20 flex w-fit items-center gap-2.5 rounded-[14px] border border-black/[0.06] bg-white/95 p-[10px_13px] shadow-[0_12px_30px_rgba(16,48,34,0.12)] backdrop-blur will-change-transform min-[861px]:left-[10px] min-[861px]:top-[-54px] dark:border-white/10 dark:bg-[#0a1711]/95"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-[#e3f7ec] dark:bg-[#102b20]">
           <ShieldCheck className="size-4 text-[#0c7b52] dark:text-[#63e6b6]" />
@@ -104,8 +104,8 @@ export function RepairVisual() {
       {/* Floating payment card */}
       <div
         data-float
-        data-float-delay="-3.2"
-        className="absolute bottom-[18px] right-0 z-20 flex w-fit items-center gap-2.5 rounded-[14px] border border-black/[0.06] bg-white/95 p-[10px_13px] shadow-[0_12px_30px_rgba(16,48,34,0.10)] min-[861px]:bottom-[-68px] min-[861px]:right-[6px] dark:border-white/10 dark:bg-[#0a1711]/95"
+        data-float-delay="1.1"
+        className="absolute bottom-[18px] right-0 z-20 flex w-fit items-center gap-2.5 rounded-[14px] border border-black/[0.06] bg-white/95 p-[10px_13px] shadow-[0_12px_30px_rgba(16,48,34,0.10)] will-change-transform min-[861px]:bottom-[-68px] min-[861px]:right-[6px] dark:border-white/10 dark:bg-[#0a1711]/95"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-[#e6f6ec] dark:bg-[#102b20]">
           <CreditCard className="size-4 text-[#0c7b52] dark:text-[#63e6b6]" />
@@ -123,7 +123,8 @@ export function RepairVisual() {
       {/* Floating arrival card */}
       <div
         data-float
-        className="absolute bottom-[-68px] left-[30px] z-20 hidden w-fit items-center gap-2.5 rounded-[14px] border border-black/[0.06] bg-white/95 p-[10px_13px] shadow-[0_12px_30px_rgba(16,48,34,0.10)] min-[861px]:flex dark:border-white/10 dark:bg-[#0a1711]/95"
+        data-float-delay="0.9"
+        className="absolute bottom-[-68px] left-[30px] z-20 hidden w-fit items-center gap-2.5 rounded-[14px] border border-black/[0.06] bg-white/95 p-[10px_13px] shadow-[0_12px_30px_rgba(16,48,34,0.10)] will-change-transform min-[861px]:flex dark:border-white/10 dark:bg-[#0a1711]/95"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-[#e6f6ec] dark:bg-[#102b20]">
           <Clock className="size-4 text-[#0c7b52] dark:text-[#63e6b6]" />

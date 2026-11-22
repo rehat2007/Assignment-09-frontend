@@ -55,16 +55,19 @@ export function HomeMotion() {
         });
       });
 
-      gsap.utils.toArray<HTMLElement>("[data-float]").forEach((element) => {
-        const delay = Number(element.dataset.floatDelay ?? 0);
+      gsap.utils.toArray<HTMLElement>("[data-float]").forEach((element, index) => {
+        // Start from rest with a positive delay. A negative delay makes GSAP
+        // jump to a mid-cycle position on the first frame, which looks jerky.
+        const delay = Number(element.dataset.floatDelay ?? 0.6 + index * 0.3);
 
         gsap.to(element, {
-          y: -7,
-          duration: 7,
+          y: -6,
+          duration: 7.5 + index * 0.9,
           delay,
           ease: "sine.inOut",
           repeat: -1,
           yoyo: true,
+          force3D: true,
         });
       });
 
