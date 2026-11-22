@@ -10,7 +10,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Fix Mate frontend
 
-FixMate repair marketplace: Next.js 16 App Router (React 19.3, TypeScript, Tailwind v4) for rendering only, with accounts, catalog, bookings, reviews, uploads, admin actions, and payments in a separate Express + Better Auth + MongoDB API at `C:\web_dev\fix_mate\fix_mate_back_end`. The backend is the source of truth; the frontend reads it through `/api/v1/*`. `README.md` is the assignment/backend contract, but its setup snippets drift (it says `.env.local`; the app uses `.env`, and no `.env.example` exists).
+FixMate repair marketplace: Next.js 16 App Router (React 19.3, TypeScript, Tailwind v4) for rendering only. Accounts, catalog, bookings, reviews, uploads, admin actions, and payments live in the sibling Express + Better Auth + MongoDB repo at `C:\web_dev\fix_mate\fix_mate_back_end` (a separate git repo with its own `AGENTS.md`). The backend is the source of truth; the frontend reads it through `/api/v1/*`. Don't add database access, business logic, or new route handlers here — `src/app/api/avatar/[file]/route.ts` is only a legacy shim for old local avatars.
+
+`README.md` is the assignment/backend contract, but its setup snippets drift: it says `.env.local`; the app uses `.env`, and no `.env.example` exists.
 
 ## Commands
 
@@ -18,19 +20,20 @@ FixMate repair marketplace: Next.js 16 App Router (React 19.3, TypeScript, Tailw
 - `npm run build` — Turbopack production build; runs TypeScript but no longer runs lint.
 - `npm run lint` — ESLint flat config (`eslint.config.mjs`). `next lint` was removed in Next 16.
 - `npx next typegen` then `npx tsc --noEmit` — typecheck. Run typegen after adding/moving routes or when `.next/types` is missing; it also regenerates `next-env.d.ts`.
-- No tests or CI. Don't invent a test command or add a runner unless asked.
+- This frontend has no tests or CI. Don't invent a test command or add a runner unless asked. Backend work lives in `fix_mate_back_end` and has its own `AGENTS.md`.
 - Use npm (`package-lock.json` is the only lockfile).
-- Backend-only scripts (run in `fix_mate_back_end`): `npm run seed` (idempotent demo data) and `npm run auth:admin` (needs `ADMIN_PASSWORD` ≥8 chars).
+- Backend checks/scripts (run in `fix_mate_back_end`): `npm run typecheck` is the static check, `npm run migrate:schema` belongs in deploy, and `seed`/`data:clear-demo`/`test:smoke` are local/demo-database only — never run them against production.
 
 ## Architecture and data flow
 
 - Public pages: `/`, `/services`, `/services/[id]`, `/about`, `/sign-in`, `/sign-up`, `/payment/success`, `/payment/cancel`. `/how-it-works` is a permanent redirect to `/about` in `next.config.ts`; don't recreate that page.
 - Authenticated areas: `/dashboard` plus the `customer`, `technician`, and `admin` workspaces and `/dashboard/profile`.
 - Server components fetch through `src/lib/api.ts` (`apiFetch`). It unwraps `{ data, meta }`, throws `ApiRequestError`, defaults to `revalidate: 60`, and forwards the browser cookie only with `withCookies: true` (which also forces `no-store`). It calls `headers()`, so never use it in a client component.
-- Public catalog fetchers in `src/lib/catalog.ts` tag responses with `catalog`. After listing or review mutations, call the server action `revalidateCatalog()` (`src/app/actions.ts`, wraps `updateTag("catalog")`).
+- Public catalog fetchers in `src/lib/catalog.ts` tag responses with `catalog`. After catalog mutations (listings, reviews, admin approval), call the server action `revalidateCatalog()` (`src/app/actions.ts`, wraps `updateTag("catalog")`).
 - Client mutations call `${NEXT_PUBLIC_API_URL}` directly with `credentials: "include"` and handle their own JSON/errors. Keep the split: `API_URL` on the server, `NEXT_PUBLIC_API_URL` in the browser.
+- In deployed environments, set `NEXT_PUBLIC_API_URL` to the **frontend origin**, not the backend origin. `next.config.ts` rewrites `/api/auth/*` and `/api/v1/*` to `API_URL` so auth cookies live on the frontend host and server components can read them; pointing the browser at the backend makes sign-in succeed but leaves the dashboard redirecting back to `/sign-in`. Google OAuth still calls the backend callback directly, so it is not fixed by this proxy.
 - Express `/api/v1` responses are `{ data, meta }` or `{ error: { code, message, details } }`; pagination defaults are 9 (public), 20 (dashboards), max 100. `GET /api/v1/me` is read-only; profile writes stay on Better Auth `POST /api/auth/update-user`.
-- `src/lib/{customer,technician,admin}-api.ts` own authenticated dashboard fetchers. `src/lib/{customer,technician,admin}-data.ts` hold shared DTO types/labels/formatters plus preview arrays; `src/lib/services.ts` and `src/lib/service-details.ts` are seed/type sources mirrored into the backend seed. Do not import the `SERVICES`, `SERVICE_DETAILS`, or preview arrays into pages.
+- `src/lib/{customer,technician,admin}-api.ts` own authenticated dashboard fetchers. `src/lib/{customer,technician,admin}-data.ts` hold shared DTO types/labels/formatters plus preview arrays; `src/lib/services.ts` and `src/lib/service-details.ts` are seed/type sources mirrored by `fix_mate_back_end/scripts/seed-data.ts`. Update both sides when seed content changes. Do not import the `SERVICES`, `SERVICE_DETAILS`, or preview arrays into pages.
 - Preview data still drives `/dashboard/profile` statistics (`ADMIN_STATS`, `CUSTOMER_PAYMENTS`, `getCustomerStats`, `getTechnicianStats`) and the plan/rating copy in `add-service-form.tsx`. Dashboard sidebar counts are live, passed from `src/app/dashboard/layout.tsx`.
 - `src/lib/home-data.ts` is home-only copy; featured services and category counts come from `/api/v1/meta` + `/api/v1/services`. `popular-categories.tsx` renders `WhyFixmate` inline. `popular-strip.tsx` is an unused draft; the live strip is `category-strip.tsx`.
 
@@ -52,7 +55,7 @@ FixMate repair marketplace: Next.js 16 App Router (React 19.3, TypeScript, Tailw
 - `/services/[id]` loads `/api/v1/services/:slug` and its reviews; unknown or hidden slugs 404. Review bars use `meta.distribution` (5★→1★). Signed-in customers get `booking-request-dialog.tsx`, which posts only `serviceSlug`, `preferredDate`, `phone`, `address`, and `problem`; never send price, technician, status, or payment fields.
 - Customer bookings: cancel calls `POST /api/v1/bookings/:id/cancel`; Pay now calls `POST .../checkout` and redirects to Stripe. Checkout returns to `/payment/success?session_id=` (server-verified through `GET /api/v1/payments/verify`) or `/payment/cancel`. Reviews post only `{ rating, text }` for completed+paid bookings, then call `revalidateCatalog()`.
 - Technician listings support create, edit, availability toggle, and soft delete. Editing an approved/rejected listing returns it to `pending`. Cover upload goes to `POST /api/v1/uploads/service-cover` (JPG/PNG/WEBP, 5 MB) and the returned URL is submitted as `coverImage`; the generated sample cover is preview-only.
-- Admin role changes may target customer, technician, or admin; self-change is blocked by the backend. Suspend/restore uses Better Auth bans. Approve/reject work on any non-deleted listing (no pending-only guard); approve clears the rejection reason, reject stores it. Admin actions write `auditLogs`, but there is no audit-log read UI.
+- Admin role changes may target customer, technician, or admin; self-change is blocked by the backend. Suspend/restore uses Better Auth bans. Approve/reject work on any non-deleted listing (no pending-only guard); approve clears the rejection reason, reject stores it. Admin actions write `auditLogs`, but there is no audit-log read UI. README phase notes still say role changes are customer↔technician-only and approval is pending-only; those are stale.
 - Profile edits go through `authClient.updateUser` (`name`, `phone`, `area`, `bio`, `image`); email/role/accountType are read-only. Avatar uploads use `POST /api/v1/uploads/avatar` (2 MB).
 - Footer legal links (`/privacy`, `/terms`, `/support`) and `/forgot-password` are placeholders with no routes; don't treat those 404s as regressions.
 - Visual reference: `C:\web_dev\assignment_09-demo` (vanilla-JS SPA).
