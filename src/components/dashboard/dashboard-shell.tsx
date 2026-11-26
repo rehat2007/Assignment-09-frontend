@@ -4,7 +4,6 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell,
   ChevronRight,
   ClipboardList,
   CreditCard,
@@ -23,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 import { Brand } from "@/components/brand";
+import { NotificationMenu } from "@/components/dashboard/notification-menu";
 import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { authClient } from "@/lib/auth-client";
@@ -382,14 +382,7 @@ export function DashboardShell({
             </div>
 
             <div className="ml-auto flex items-center gap-1">
-              <button
-                type="button"
-                aria-label="Notifications"
-                title="Notifications"
-                className="relative flex size-10 items-center justify-center rounded-[11px] text-[#5f6f68] transition-colors hover:bg-black/[0.04] dark:text-[#9dab9f] dark:hover:bg-white/[0.06]"
-              >
-                <Bell className="size-[18px]" />
-              </button>
+              <NotificationMenu userKey={user.email} role={role} />
               <ThemeToggle />
               <ProfileMenu
                 key={pathname}
