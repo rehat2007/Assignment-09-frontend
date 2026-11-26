@@ -1,175 +1,847 @@
-# FixMate — Smart Device & Home Appliance Repair Platform
+# FixMate — Repair, Tracked
 
-FixMate is a full-stack, role-based repair marketplace for smartphones, laptops,
-ACs, refrigerators, TVs, washing machines, and electrical work. Customers browse
-approved services, send repair requests, track the job, and pay only after the
-work is completed. Technicians manage listings and jobs. Admins approve
-listings, manage users, and monitor bookings and payments.
+**A full-stack, role-based marketplace for device and home-appliance repairs.**
 
-> **Assignment 9 submission details** are in this top section. The detailed
-> phase-by-phase backend implementation contract follows below.
+FixMate connects customers with verified repair technicians for smartphones, laptops, ACs, refrigerators, TVs, washing machines, and electrical work. Customers browse approved services, request a repair, track every status change, and pay only after the job is complete. Technicians manage listings and requests, while admins moderate the marketplace, users, bookings, and payments.
 
-## Live URL
+[![Next.js](https://img.shields.io/badge/Next.js-16.4-000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.3-087ea4?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Express](https://img.shields.io/badge/Express-5-000?logo=express&logoColor=white)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47a248?logo=mongodb&logoColor=white)](https://www.mongodb.com/atlas)
+[![Stripe](https://img.shields.io/badge/Stripe-Checkout-635bff?logo=stripe&logoColor=white)](https://stripe.com/)
 
-```text
-<ADD THE PRODUCTION FRONTEND URL HERE AFTER DEPLOYMENT>
-```
+> **Status:** Core marketplace flows are implemented and the frontend is deployed. The public catalog, authentication, and API health are live. Stripe payments, uploads, and authenticated dashboards require the corresponding backend environment and accounts to be configured. Automated end-to-end tests and CI are not configured yet.
 
-Backend health endpoint:
+## Live Demo & Source
 
-```text
-<ADD THE PRODUCTION BACKEND URL>/api/v1/health
-```
+| Resource | URL |
+|---|---|
+| **Live application** | https://assignment-09-frontend-two.vercel.app |
+| **Live API health** (through the frontend proxy) | https://assignment-09-frontend-two.vercel.app/api/v1/health |
+| **Frontend repository** | https://github.com/rehat2007/Assignment-09-frontend- |
+| **Backend repository** | https://github.com/rehat2007/Assignment-09-backend |
 
-## Demo credentials
+The backend is a separate Express service. Its direct origin is configured through the `API_URL` environment variable; browser traffic uses the frontend origin and is proxied to the backend by Next.js rewrites.
 
-| Role | Email | Password |
+---
+
+## Table of Contents
+
+1. [Project Introduction](#1-project-introduction)
+2. [Features](#2-features)
+3. [Technology Stack](#3-technology-stack)
+4. [Project Architecture](#4-project-architecture)
+5. [Installation & Setup](#5-installation--setup)
+6. [Environment Variables](#6-environment-variables)
+7. [API Documentation](#7-api-documentation)
+8. [Authentication & Authorization](#8-authentication--authorization)
+9. [Database Design](#9-database-design)
+10. [Screenshots / Demo](#10-screenshots--demo)
+11. [Deployment](#11-deployment)
+12. [Future Improvements](#12-future-improvements)
+13. [Author & Contribution](#13-author--contribution)
+
+---
+
+## 1. Project Introduction
+
+### What is the name of the project?
+
+**FixMate** — tagline: *Repair, Tracked.*
+
+### What is this project about?
+
+FixMate is a full-stack repair marketplace with three user roles:
+
+| Role | What they do |
+|---|---|
+| **Customer** | Discover approved services, request a repair, track the job, pay after completion, and review the technician. |
+| **Technician** | Create and manage service listings, upload cover images, accept or reject requests, start work, complete jobs, and set the final amount. |
+| **Admin** | Approve or reject listings, manage users and roles, suspend or restore accounts, monitor bookings, and review platform payments. |
+
+The application is split into two deployments:
+
+- **Frontend:** Next.js 16 App Router application in this repository.
+- **Backend:** Express 5 + TypeScript API with MongoDB, Better Auth, JWT, Stripe, and pluggable image storage in the sibling `fix_mate_back_end` repository.
+
+### What problem does it solve?
+
+Hiring a repair technician is often opaque. Customers may not know who is coming, what the final price will be, whether the technician is qualified, or when they should pay. Technicians, meanwhile, lack a structured way to list services and manage incoming jobs.
+
+FixMate makes the transaction accountable:
+
+- Every public listing is **admin-approved**.
+- Every job follows a **server-enforced status pipeline**.
+- Every status change is visible on a **job timeline**.
+- Payment is **unlocked only after the technician marks the job complete**.
+- Reviews are allowed only after a **completed and paid** booking.
+- Admins get a platform-wide view of users, listings, bookings, and revenue.
+
+### Why was this project built?
+
+FixMate was built as the **Assignment 9 full-stack submission** and as a realistic portfolio project. The goal was to implement the complete repair lifecycle — discovery, approval, booking, fulfilment, payment, and review — with real authentication, role-based access control, server-side validation, and payment verification rather than a UI-only prototype.
+
+### Who are the intended users?
+
+- **Customers** who need a phone, laptop, appliance, or electrical repair and want price transparency and a tracked job.
+- **Independent technicians** who want a professional listing and a simple way to manage requests.
+- **Platform administrators** who need to moderate listings, users, bookings, and payments.
+- **Developers and evaluators** reviewing a production-style full-stack implementation.
+
+The UI copy and seed data use a Dhaka, Bangladesh context, but the architecture is location-agnostic.
+
+### What makes this project useful or different?
+
+- **Pay-after-service:** Stripe Checkout opens only after the technician completes the job and sets a positive final amount.
+- **Admin-gated catalog:** Only approved, available, non-deleted listings appear publicly.
+- **Server-enforced state machine:** Booking transitions are validated by the API, not by the browser.
+- **Dual authentication:** Better Auth session cookies for the web app, plus a JWT cookie for API clients and server-to-server requests.
+- **Idempotent payments:** One payment per booking, with unique Stripe session and payment-intent IDs.
+- **Role-specific dashboards:** Customer, technician, and admin experiences are separated by both UI and backend middleware.
+- **Transparent reviews:** One review per paid booking, with rating aggregation and a 5★→1★ distribution on the service page.
+
+---
+
+## 2. Features
+
+### Main features
+
+| Area | Features |
+|---|---|
+| **Public catalog** | Approved-service listing, keyword search, category and mode filters, price/newest/rating sorting, URL-driven filters, pagination, service detail pages, review distribution. |
+| **Authentication** | Email/password sign-up and sign-in, optional Google OAuth, session cookies, JWT fallback cookie, sign-out, password visibility toggle, network-error handling. |
+| **Customer dashboard** | Overview stats, active repair, booking list, status timeline, cancel request, Stripe payment, payment history, review dialog, profile editing, avatar upload. |
+| **Technician dashboard** | Overview metrics, listing CRUD, cover upload, availability toggle, soft delete, request list, accept/reject/start/complete actions, final amount entry. |
+| **Admin dashboard** | Platform overview, pending-listing queue, approve/reject, user list, role changes, suspend/restore, booking list, payment/revenue view, client-side CSV export. |
+| **Payments** | Stripe Checkout, success-page verification, signed webhook, idempotent payment recording, invoice/transaction data. |
+| **Reviews** | One review per completed+paid booking, rating aggregation, public review list, rating distribution. |
+| **Media** | Avatar uploads (2 MB), service-cover uploads (5 MB), byte-level MIME detection, local/ImgBB/S3 drivers. |
+| **Platform** | Responsive layout, dark/light theme, GSAP motion with reduced-motion support, toast notifications, loading skeletons, custom error/404 pages. |
+
+### What can users do with this application?
+
+**As a customer**
+
+- Create an account or sign in.
+- Search, filter, and sort approved services.
+- Open a service detail page and submit a repair request with a preferred date, phone, address, and problem description.
+- Track the job through `requested → accepted → in-progress → completed`.
+- Cancel a request while it is still `requested`.
+- Pay a completed, unpaid job through Stripe.
+- View payment history and transaction IDs.
+- Leave one review after the booking is completed and paid.
+- Update name, phone, area, bio, and avatar.
+
+**As a technician**
+
+- Create a listing; new listings start as `pending`.
+- Edit a listing; editing an approved or rejected listing sends it back to `pending`.
+- Toggle availability.
+- Soft-delete a listing.
+- Accept, reject, start, and complete assigned jobs.
+- Set the final amount when completing a job.
+- View earnings, paid jobs, and the request pipeline.
+- Upload a service cover image.
+
+**As an admin**
+
+- Approve or reject any non-deleted listing.
+- Clear the rejection reason on approval; store it on rejection.
+- Change a user's role between customer, technician, and admin.
+- Suspend and restore users through Better Auth bans.
+- View all bookings with status and payment filters.
+- View all payments and revenue summaries.
+- Export loaded admin data to CSV from the browser.
+
+### Does it have authentication?
+
+Yes. Better Auth provides email/password authentication and optional Google OAuth. The Express API additionally issues a JWT stored in an httpOnly `fixmate_token` cookie. See [Section 8](#8-authentication--authorization).
+
+### Does it support CRUD operations?
+
+Yes, across the domain:
+
+- **Services:** create, read, update, availability toggle, soft delete.
+- **Bookings:** create, read, cancel, status transitions, complete with final amount.
+- **Reviews:** create and read.
+- **Payments:** create via Stripe Checkout, read/verify.
+- **Users:** read, role update, suspend/restore (no hard delete).
+- **Profile:** update name, phone, area, bio, image.
+
+### Does it have role-based access control?
+
+Yes. Three application roles are resolved from Better Auth data:
+
+1. `admin` — if the Better Auth admin-plugin `role` contains `admin`.
+2. `technician` — if `accountType === "technician"`.
+3. `customer` — otherwise.
+
+The frontend uses server-component guards (`requireUser`, `requireRole`), and the backend independently enforces `verifyCustomer`, `verifyTechnician`, and `verifyAdmin`. An admin cannot call customer-only endpoints.
+
+### Does it include any advanced functionality?
+
+- **Stripe Checkout + webhook verification** with server-side amount validation and idempotent recording.
+- **Dual auth model** (Better Auth session + JWT cookie) with an explicit Bearer-token path for API clients.
+- **Server-enforced booking state machine** with ownership checks and atomic status transitions.
+- **Next.js cache tags and ISR** for public catalog data, invalidated after listings/reviews change.
+- **Byte-level image validation** and three upload drivers (local, ImgBB, S3-compatible).
+- **Rate limiting** on auth, booking creation, and uploads.
+- **Audit logging** for admin actions.
+- **Rating aggregation** and review distribution computed from MongoDB.
+- **Responsive, themed UI** with GSAP motion and reduced-motion support.
+
+---
+
+## 3. Technology Stack
+
+### Frontend technologies
+
+| Technology | Version | Role |
 |---|---|---|
-| Admin | `admin@fixmate.dev` | `ADMIN_PASSWORD` from the backend `.env` (not committed) |
-| Technician | `rakib@fixmate.dev` | `FixMateDemo123!` |
-| Technician | `sadia@fixmate.dev` | `FixMateDemo123!` |
-| Technician | `nayeem@fixmate.dev` | `FixMateDemo123!` |
-| Customer | `customer@fixmate.dev` | `FixMateDemo123!` |
-| Customer | `tanvir@mail.com` | `FixMateDemo123!` |
+| **Next.js** | 16.4 | App Router, server components, routing, rewrites, ISR/cache tags |
+| **React** | 19.3 | UI rendering and client interactivity |
+| **TypeScript** | 5.x | Type-safe frontend code |
+| **Tailwind CSS** | 4.3 | CSS-first styling, design tokens, dark mode |
+| **Base UI** (`@base-ui/react`) | 1.9 | Accessible unstyled primitives behind the shadcn-style components |
+| **shadcn-style components** | base-nova | Local UI primitives in `src/components/ui` |
+| **Lucide React** | 1.75 | Icons |
+| **Sonner** | 2.0 | Toast notifications |
+| **GSAP + ScrollTrigger** | 3.15 | Homepage and section motion |
+| **Better Auth client** | 1.7 | Browser auth client, session hook, admin client |
+| **`cn`** | 0.5 | Conditional class composition (no `clsx`/`tailwind-merge`) |
 
-Before submitting, replace the admin password placeholder with the real admin
-password or share it privately with the evaluator.
+### Backend technologies
 
-## Key features
+| Technology | Version | Role |
+|---|---|---|
+| **Node.js** | 20.9+ | Runtime |
+| **Express** | 5.3 | HTTP API and middleware pipeline |
+| **TypeScript** | 5.9 | Type-safe backend code |
+| **MongoDB** | 7.x driver | Primary datastore |
+| **Better Auth** | 1.7 | Identity, sessions, password hashing, Google OAuth, admin plugin |
+| **JWT** (`jsonwebtoken`) | 9.x | API access tokens |
+| **Zod** | 4.x | Request validation and environment validation |
+| **Stripe** | 23.x | Checkout Sessions and webhooks |
+| **Multer** | 2.x | Multipart upload handling |
+| **AWS S3 SDK** | 3.x | S3/R2/MinIO storage driver |
+| **Helmet** | 8.x | Security headers |
+| **CORS** | 2.x | Trusted-origin policy |
+| **express-rate-limit** | 8.x | Auth/booking/upload throttling |
 
-- Better Auth customer/technician sign-up and sign-in.
-- Admin accounts are not selectable during public sign-up.
-- JWT access tokens with `verifyToken`, `verifyCustomer`, `verifyTechnician`,
-  and `verifyAdmin` middlewares.
-- Role-based dashboards for customer, technician, and admin.
-- Public catalog with server-side search, category/mode filters, price/newest
-  sorting, and pagination.
-- Technician service CRUD, approval resets on edit, and availability toggles.
-- Customer repair requests, duplicate-active-request prevention, cancellation,
-  and a visual job timeline.
-- Server-enforced job pipeline:
-  `requested → accepted → in-progress → completed`.
-- Stripe test-mode checkout, webhook verification, success-page verification,
-  and idempotent payment recording.
-- Payment history, invoices, technician earnings, and admin revenue.
-- Customer reviews, rating aggregation, and a database-driven review
-  distribution.
-- Avatar and service-cover uploads with MIME/size validation, local/S3/ImgBB
-  storage drivers, and public URL storage.
-- Admin user management, role changes, suspension/restoration, service
-  approval/rejection, and audit logging.
-- Responsive design, dark mode, charts, status badges, empty states, custom
-  404/error pages, loading skeletons, confirmation dialogs, and toast
-  notifications.
-- Idempotent demo seed with eight bookings across every status and two paid
-  demo transactions.
+### Database
 
-## Tech stack
+**MongoDB** (MongoDB Atlas or local MongoDB) with the native MongoDB Node.js driver and the Better Auth MongoDB adapter. The database is `fixmate` by default.
 
-- **Frontend:** Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4,
-  shadcn-style components, Lucide icons, GSAP, Sonner.
-- **Backend:** Node.js, Express, TypeScript, MongoDB, Better Auth, JWT,
-  Stripe, Zod, Multer, AWS S3 SDK.
-- **Database:** MongoDB (`user`, `services`, `bookings`, `payments` plus the
-  optional `reviews`, `technicianProfiles`, and `auditLogs` extensions).
-- **Payments:** Stripe Checkout and webhooks (test mode).
-- **Media:** ImgBB, S3-compatible storage, or local development storage.
+### Authentication system
 
-## npm packages
+**Better Auth** for identity and sessions, plus a **JWT** issued by the Express API and stored in an httpOnly cookie. The API accepts either a Better Auth session or a valid JWT (Bearer header or cookie). See [Section 8](#8-authentication--authorization).
 
-Frontend highlights:
+### Third-party libraries and APIs
+
+- **Stripe Checkout** and **Stripe webhooks**.
+- **Google OAuth** (optional).
+- **ImgBB**, **AWS S3**, **Cloudflare R2**, or **MinIO** for image storage.
+- **MongoDB Atlas** for hosted MongoDB.
+- **Vercel** for frontend and backend deployment.
+
+### Why were these technologies chosen?
+
+| Choice | Rationale |
+|---|---|
+| **Next.js App Router** | Server-rendered public pages, SEO-friendly service detail pages, server components for authenticated dashboards, and built-in rewrites for same-origin API/auth cookies. |
+| **React 19 + TypeScript** | A modern component model with end-to-end type safety for DTOs, API responses, and forms. |
+| **Tailwind CSS v4** | Fast, consistent styling without a separate Tailwind config; tokens and dark mode live in CSS. |
+| **Base UI / shadcn-style components** | Accessible primitives that can be owned locally instead of pulling in a heavy component framework. |
+| **Express 5** | Explicit middleware order, straightforward route organization, and easy deployment as a Node service or Vercel function. |
+| **MongoDB** | Flexible documents for services, bookings, and payments, with indexes for catalog and dashboard queries. |
+| **Better Auth** | Mature email/password and OAuth support, session management, and an admin plugin for roles/bans. |
+| **JWT fallback** | Gives API clients a portable Bearer token while keeping browser auth cookie-based. |
+| **Zod** | One validation layer for request bodies, query strings, params, and environment variables. |
+| **Stripe Checkout** | Hosted payment UI reduces PCI scope; webhooks provide server-side confirmation. |
+| **ImgBB / S3 drivers** | Works for a free demo deployment and can scale to object storage without changing application code. |
+| **Vercel** | Simple Git-based deployments for both the Next.js frontend and the Express serverless backend. |
+
+---
+
+## 4. Project Architecture
+
+### How is the project structured?
+
+FixMate is intentionally split into two repositories:
 
 ```text
-next, react, react-dom, better-auth, gsap, lucide-react, sonner,
-tailwindcss, shadcn, @base-ui/react, class-variance-authority, cn,
-tw-animate-css
+fix_mate/
+├── fix_mate_front_end/          # Next.js 16 application (this repo)
+│   ├── src/app/                 # Routes, layouts, server actions
+│   ├── src/components/          # Public, dashboard, auth, and UI components
+│   ├── src/lib/                 # API clients, auth helpers, DTOs, preview data
+│   ├── docs/screenshots/        # README screenshots
+│   ├── next.config.ts           # API/auth rewrites + redirects
+│   └── AGENTS.md                # Repository guidance for coding agents
+└── fix_mate_back_end/           # Express 5 API + MongoDB
+    ├── src/
+    │   ├── index.ts             # App, middleware order, route mounts
+    │   ├── auth.ts              # Better Auth configuration
+    │   ├── routes/              # HTTP route definitions
+    │   ├── services/            # Business logic
+    │   ├── middleware/          # Auth, validation, errors, rate limits
+    │   ├── validation/          # Zod schemas
+    │   ├── db/                  # Mongo client, collections, indexes
+    │   └── types/               # Document and DTO types
+    └── scripts/                 # Seed, migration, admin, smoke test
 ```
 
-Backend highlights:
+### Frontend route map
+
+| Route | Purpose |
+|---|---|
+| `/` | Marketing homepage, featured services, categories, trust content |
+| `/services` | Public catalog with URL-driven filters, sorting, and pagination |
+| `/services/[id]` | Service detail, reviews, booking request |
+| `/about` | Product story and repair pipeline |
+| `/sign-in`, `/sign-up` | Authentication |
+| `/dashboard` | Redirects to the current role's workspace |
+| `/dashboard/customer/*` | Customer overview, bookings, payments |
+| `/dashboard/technician/*` | Technician overview, listings, requests, add service |
+| `/dashboard/admin/*` | Admin overview, users, services, bookings, transactions |
+| `/dashboard/profile` | Profile and avatar editing |
+| `/payment/success` | Server-verified Stripe return page |
+| `/payment/cancel` | Stripe cancellation page |
+| `/how-it-works` | Permanent redirect to `/about` |
+
+### How does the frontend communicate with the backend?
+
+There are two distinct paths:
+
+```mermaid
+flowchart LR
+    B[Browser] -->|page navigation| N[Next.js frontend]
+    N -->|server components: API_URL| E[Express API]
+    B -->|client mutations: NEXT_PUBLIC_API_URL + credentials| N
+    N -->|rewrites /api/auth/* and /api/v1/*| E
+    E --> A[Better Auth]
+    E --> M[(MongoDB)]
+    E --> S[Stripe]
+    E --> U[ImgBB / S3 / local storage]
+```
+
+1. **Server components** call `apiFetch()` in `src/lib/api.ts` using the server-only `API_URL`. The helper unwraps `{ data, meta }`, throws `ApiRequestError` on failure, applies `revalidate: 60` by default, and forwards the browser cookie only when `withCookies: true`.
+2. **Client components** call `${NEXT_PUBLIC_API_URL}/api/v1/...` directly with `credentials: "include"`. They handle their own JSON and error states.
+3. **Browser auth** uses Better Auth from `src/lib/auth-client.ts` with `credentials: "include"`.
+4. **Next.js rewrites** in `next.config.ts` proxy `/api/auth/*` and `/api/v1/*` to `API_URL`. In production, `NEXT_PUBLIC_API_URL` is the **frontend origin**, so auth cookies live on the frontend host and server components can read them.
+
+> **Critical deployment detail:** Do not point `NEXT_PUBLIC_API_URL` at the backend origin in production. Doing so makes sign-in appear to succeed while the dashboard redirects back to `/sign-in`, because the session cookie is stored on the wrong host.
+
+### How does the application handle data?
+
+- **Public catalog** data is fetched by server components from `/api/v1/meta`, `/api/v1/services`, and `/api/v1/services/:slug`.
+- Catalog responses are tagged `catalog`; after a listing, review, or admin approval change, the client calls the server action `revalidateCatalog()` (`updateTag("catalog")`).
+- **Authenticated dashboards** use server fetchers in `src/lib/customer-api.ts`, `src/lib/technician-api.ts`, and `src/lib/admin-api.ts`, forwarding cookies with `withCookies: true`.
+- **Mutations** happen in client components and then refresh the route with `router.refresh()`.
+- **Pagination** is server-side; public pages default to 9 items, dashboards to 20, maximum 100.
+- **Preview data** in `src/lib/*-data.ts` still powers a few presentation-only areas (profile statistics and listing plan/rating copy), while dashboard sidebar counts and all real catalog/booking/payment data are live.
+
+### How does authentication work?
 
 ```text
-express, cors, helmet, mongodb, better-auth, @better-auth/mongo-adapter,
-stripe, zod, multer, jsonwebtoken, @aws-sdk/client-s3, dotenv
+Sign in / sign up
+      │
+      ▼
+Better Auth session cookie  ──►  Next.js server components read /api/auth/get-session
+      │
+      ▼
+TokenBootstrap POSTs /api/v1/auth/token
+      │
+      ▼
+Express sets httpOnly `fixmate_token` JWT cookie
+      │
+      ▼
+API accepts Better Auth session OR JWT cookie OR Bearer token
 ```
 
-The complete dependency lists are in `fix_mate_front_end/package.json` and
-`fix_mate_back_end/package.json`.
+- Better Auth runs on Express under `/api/auth/*`.
+- `src/lib/authz.ts` reads the session with the forwarded cookie and wraps it in React `cache`.
+- `requireUser` redirects to `/sign-in`; `requireRole` redirects to `/dashboard`.
+- Sign-out clears the JWT cookie through `/api/v1/auth/logout`, then calls `authClient.signOut`.
+- See [Section 8](#8-authentication--authorization) for roles, routes, and permissions.
 
-## Local setup
+### How are API requests and responses handled?
 
-Backend:
+All API routes use one envelope:
+
+**Success**
+
+```json
+{
+  "data": {},
+  "meta": {}
+}
+```
+
+**Error**
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed.",
+    "details": []
+  }
+}
+```
+
+- The frontend unwraps successful envelopes in `apiFetch()`.
+- Errors become `ApiRequestError` with `status` and `code`.
+- Paginated responses include `meta.page`, `meta.pageSize`, `meta.total`, and `meta.totalPages`.
+- The API returns an `X-Request-Id` header for request tracing.
+- See [Section 7](#7-api-documentation) for endpoints, parameters, and error codes.
+
+### How does the application manage errors?
+
+**Backend**
+
+- Expected failures throw `ApiError`, which the central error handler converts to the standard error envelope.
+- Zod errors return `422 VALIDATION_ERROR` with field-level details.
+- Malformed JSON returns `400 MALFORMED_JSON`; oversized bodies return `413 PAYLOAD_TOO_LARGE`.
+- Unknown errors return `500 INTERNAL_ERROR` without leaking stack traces in production.
+- Request IDs are logged and exposed via `X-Request-Id`.
+
+**Frontend**
+
+- Server pages use `error.tsx`, `not-found.tsx`, and dashboard-specific error boundaries.
+- Client mutations catch non-2xx responses, parse the error envelope, and show a Sonner toast.
+- Auth forms normalize network failures with `getAuthErrorMessage()`.
+- The payment success page distinguishes “verified” from “could not verify” and renders an alert state.
+
+---
+
+## 5. Installation & Setup
+
+### Prerequisites
+
+- **Node.js 20.9+** (Node 24 was used during development).
+- **npm** (the repository uses `package-lock.json`).
+- **MongoDB** — local MongoDB or a MongoDB Atlas cluster.
+- **Stripe test keys** — optional, needed for payment testing.
+- **ImgBB API key, S3/R2/MinIO credentials, or local storage** — for uploads.
+- **Google OAuth credentials** — optional.
+
+### Clone the repositories
+
+```powershell
+cd C:\web_dev\fix_mate
+git clone https://github.com/rehat2007/Assignment-09-backend.git fix_mate_back_end
+git clone https://github.com/rehat2007/Assignment-09-frontend-.git fix_mate_front_end
+```
+
+### Install and configure the backend
 
 ```powershell
 cd C:\web_dev\fix_mate\fix_mate_back_end
 Copy-Item .env.example .env
-# Fill MONGODB_URI, BETTER_AUTH_SECRET, Stripe keys, and upload settings.
+# Edit .env with MongoDB, Better Auth, admin, Stripe, and upload values.
 npm install
-npm run seed
+npm run migrate:schema
+npm run auth:admin
 npm run dev
 ```
 
-Frontend:
+Backend URLs:
+
+```text
+http://localhost:4000
+http://localhost:4000/api/v1/health
+```
+
+`npm run auth:admin` creates or promotes the account identified by `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+
+> `npm run seed` is for **local development only**. Never run it against a production database. Use `npm run data:clear-demo` to remove demo data from a local/demo database.
+
+### Install and configure the frontend
 
 ```powershell
 cd C:\web_dev\fix_mate\fix_mate_front_end
-# Create .env.local from .env.example and set API_URL / NEXT_PUBLIC_API_URL.
+# Create .env (this app reads .env, not .env.local).
 npm install
 npm run dev
 ```
 
-URLs:
+Frontend URL:
 
 ```text
-Frontend: http://localhost:3000
-Backend:  http://localhost:4000
-Health:   http://localhost:4000/api/v1/health
+http://localhost:3000
 ```
 
-## Environment variables
+> The older assignment notes say `.env.local`; this application loads `.env`. There is currently no frontend `.env.example`, so create `.env` manually using the variables in [Section 6](#6-environment-variables).
 
-Backend `.env`:
+### Optional: load local demo data
+
+```powershell
+cd C:\web_dev\fix_mate\fix_mate_back_end
+npm run seed
+```
+
+The seed creates demo technicians and customers, services, bookings, and paid demo transactions. Re-running it is idempotent for existing accounts.
+
+### Test payments locally
+
+Use Stripe test mode and the test card:
+
+```text
+4242 4242 4242 4242
+Any future expiry
+Any 3-digit CVC
+```
+
+Forward webhooks to the local API:
+
+```powershell
+stripe listen --forward-to localhost:4000/api/v1/webhooks/stripe
+```
+
+Put the printed `whsec_...` value into `STRIPE_WEBHOOK_SECRET` and restart the backend.
+
+### Test uploads locally
 
 ```env
-PORT=4000
-MONGODB_URI=
-MONGODB_DB=fixmate
-BETTER_AUTH_SECRET=
-JWT_SECRET=
-JWT_EXPIRES_IN=7d
-BETTER_AUTH_URL=https://api.your-domain.com
-FRONTEND_URL=https://your-domain.com
-ADMIN_EMAIL=
-ADMIN_PASSWORD=
-SEED_PASSWORD=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
+UPLOAD_DRIVER=local
+```
+
+or, for ImgBB:
+
+```env
 UPLOAD_DRIVER=imgbb
-IMGBB_API_KEY=
+IMGBB_API_KEY=your_imgbb_key
 ```
 
-Optional S3/R2 settings: `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`,
-`S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_PUBLIC_URL`,
-`S3_FORCE_PATH_STYLE`.
+Avatar uploads are limited to 2 MB and service covers to 5 MB. Allowed types are JPG, PNG, and WebP; MIME is detected from the file bytes.
 
-Frontend `.env.local`:
+### Verify the build
+
+```powershell
+cd C:\web_dev\fix_mate\fix_mate_front_end
+npx next typegen
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+> **Build prerequisite:** `npm run build` prerenders `/`, which calls `/api/v1/meta` and `/api/v1/services`. The Express API must be reachable at `API_URL`, or the build fails on `/` with `fetch failed`. For a backend-free check, run typegen, `tsc`, and lint instead.
+
+### Useful backend commands
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start the API with `tsx watch` on `PORT` (default 4000). |
+| `npm run typecheck` | TypeScript check without emitting. |
+| `npm run build` | Compile to `dist/`. |
+| `npm start` | Run the compiled API. |
+| `npm run migrate:schema` | Backfill Assignment 9 compatibility fields; run after schema changes and on deploy. |
+| `npm run auth:admin` | Create or promote the configured admin account. |
+| `npm run seed` | Local/demo data only. |
+| `npm run data:clear-demo` | Remove local/demo data only. |
+| `npm run test:smoke` | Local smoke test; requires a seeded database and running server. |
+
+---
+
+## 6. Environment Variables
+
+### Frontend `.env`
+
+| Variable | Required? | Purpose |
+|---|---|---|
+| `API_URL` | **Yes** | Backend origin used by server components and `src/lib/authz.ts`. Example: `http://localhost:4000`. |
+| `NEXT_PUBLIC_API_URL` | **Yes** | Browser API/auth origin. Use `http://localhost:4000` locally. In production, use the **frontend origin** so Next.js rewrites proxy requests and cookies stay on the frontend host. |
+| `GOOGLE_CLIENT_ID` | Optional | Only controls whether the Google sign-in/sign-up buttons render. OAuth itself runs on Express. |
+| `GOOGLE_CLIENT_SECRET` | Optional | Same as above. |
+
+Example local `.env`:
 
 ```env
-API_URL=https://api.your-domain.com
-NEXT_PUBLIC_API_URL=https://api.your-domain.com
+API_URL=http://localhost:4000
+NEXT_PUBLIC_API_URL=http://localhost:4000
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
 
-## API overview
+Production example:
 
-The frontend uses the versioned API:
-
-```text
-/api/v1/...
+```env
+API_URL=https://your-backend.vercel.app
+NEXT_PUBLIC_API_URL=https://your-frontend.vercel.app
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 ```
 
-Assignment compatibility aliases are also available at the exact documented
-paths:
+> `NEXT_PUBLIC_*` variables are embedded in the browser bundle. Never put secrets there.
+
+### Backend `.env`
+
+| Variable | Required? | Purpose |
+|---|---|---|
+| `NODE_ENV` | Optional | `development`, `test`, or `production`; defaults to `development`. |
+| `PORT` | Optional | API port; defaults to `4000`. |
+| `MONGODB_URI` | **Yes** | MongoDB connection string (Atlas or local). |
+| `MONGODB_DB` | **Yes** | Database name; usually `fixmate`. |
+| `MONGODB_DNS_SERVERS` | Optional | Custom DNS resolver for `mongodb+srv://` on networks that block SRV lookups (e.g. `1.1.1.1`). |
+| `BETTER_AUTH_SECRET` | **Yes** | Signing secret, **at least 32 characters**; startup fails otherwise. |
+| `BETTER_AUTH_URL` | **Yes** | Backend origin used for cookies, OAuth callbacks, and local upload URLs. |
+| `FRONTEND_URL` | **Yes** | Exact frontend origin allowed by CORS and Better Auth `trustedOrigins`. |
+| `JWT_SECRET` | Recommended | Separate JWT signing secret; falls back to `BETTER_AUTH_SECRET`. |
+| `JWT_EXPIRES_IN` | Optional | JWT lifetime; defaults to `7d`. |
+| `ADMIN_EMAIL` | **Yes** | Email for the admin account created by `npm run auth:admin`. |
+| `ADMIN_NAME` | Optional | Display name for the admin account. |
+| `ADMIN_PASSWORD` | **Yes for admin setup** | Password used by `npm run auth:admin`; must be at least 8 characters. Never commit it. |
+| `SEED_PASSWORD` | Local demo only | Password for seeded non-admin demo accounts; defaults to `FixMateDemo123!`. |
+| `GOOGLE_CLIENT_ID` | Optional | Google OAuth client ID. |
+| `GOOGLE_CLIENT_SECRET` | Optional | Google OAuth client secret. |
+| `STRIPE_SECRET_KEY` | For payments | Stripe test/live secret key. Leave blank to run without checkout. |
+| `STRIPE_WEBHOOK_SECRET` | For webhooks | Stripe signing secret (`whsec_...`). |
+| `UPLOAD_DRIVER` | **Yes** | `local`, `imgbb`, or `s3`; defaults to `local`. |
+| `IMGBB_API_KEY` | If `UPLOAD_DRIVER=imgbb` | Required by the ImgBB driver. |
+| `S3_BUCKET` | If `UPLOAD_DRIVER=s3` | Bucket name. |
+| `S3_REGION` | If `UPLOAD_DRIVER=s3` | Region; R2 uses `auto`. |
+| `S3_ACCESS_KEY_ID` | If `UPLOAD_DRIVER=s3` | Access key; omit both key fields to use the default AWS credential chain. |
+| `S3_SECRET_ACCESS_KEY` | If `UPLOAD_DRIVER=s3` | Secret key. |
+| `S3_ENDPOINT` | Optional | Custom endpoint for R2/MinIO. |
+| `S3_PUBLIC_URL` | Optional | Public/CDN base URL for stored objects. |
+| `S3_FORCE_PATH_STYLE` | Optional | `true` for MinIO/path-style providers. |
+
+### Where to obtain API keys
+
+| Service | Where |
+|---|---|
+| **MongoDB Atlas** | https://www.mongodb.com/atlas |
+| **Stripe test keys** | https://dashboard.stripe.com/test/apikeys |
+| **Stripe webhook secret** | `stripe listen` output, or the Stripe Dashboard webhook settings |
+| **Google OAuth** | https://console.cloud.google.com/apis/credentials |
+| **ImgBB** | https://api.imgbb.com/ |
+| **AWS S3 / R2 / MinIO** | Your provider's console; use the `S3_*` variables |
+
+Generate a strong Better Auth secret with:
+
+```powershell
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### Security considerations
+
+- **Keep backend secrets server-side.** Only `NEXT_PUBLIC_API_URL` and the optional public Google client ID belong in browser-visible variables.
+- **Use a strong, unique `BETTER_AUTH_SECRET`** (32+ characters) and a separate `JWT_SECRET`.
+- **Never commit `.env` files.** The repository ignores `.env*`; only `.env.example` belongs in the backend repository.
+- **Use production origins exactly.** `BETTER_AUTH_URL` must be the backend origin; `FRONTEND_URL` must be the frontend origin; CORS and Better Auth trusted origins depend on both.
+- **Cookies are httpOnly and secure in deployed environments** (`SameSite=None` when deployed, `Lax` locally).
+- **Stripe webhooks require the raw request body** and a valid signature. The server verifies the signature and the amount before recording a payment.
+- **Never trust client amounts, roles, or status values.** The backend recomputes roles, loads booking amounts, and enforces status transitions.
+- **Do not run demo seed scripts against production.** Use `npm run auth:admin` and real sign-ups instead.
+- **Rotate any key that was ever committed or shared.** Use test-mode Stripe keys for demos.
+
+---
+
+## 7. API Documentation
+
+### Base URLs
+
+| Environment | Base URL |
+|---|---|
+| Local API | `http://localhost:4000/api/v1` |
+| Live public API (through the frontend proxy) | `https://assignment-09-frontend-two.vercel.app/api/v1` |
+| Better Auth (local) | `http://localhost:4000/api/auth` |
+| Better Auth (live, through proxy) | `https://assignment-09-frontend-two.vercel.app/api/auth` |
+
+All endpoint paths below are relative to `/api/v1` unless they start with `/api/auth` (Better Auth) or are shown with a full path. Requests and responses are JSON unless the endpoint is an upload or webhook.
+
+### Authentication for API requests
+
+Protected endpoints accept any of:
+
+1. A valid **Better Auth session cookie** (browser/server-rendered requests).
+2. The **`fixmate_token` JWT cookie** set by `POST /api/v1/auth/token`.
+3. An explicit **`Authorization: Bearer <token>`** header. Explicit Bearer tokens take precedence for API clients.
+
+### Response envelope
+
+**Success**
+
+```json
+{
+  "data": {},
+  "meta": {}
+}
+```
+
+**Paginated success**
+
+```json
+{
+  "data": [],
+  "meta": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 42,
+    "totalPages": 3
+  }
+}
+```
+
+**Error**
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "You do not have access.",
+    "details": []
+  }
+}
+```
+
+### Public endpoints
+
+| Method | Endpoint | Access | Parameters | Returns |
+|---|---|---|---|---|
+| `GET` | `/health` | Public | — | `{ ok, service, database, timestamp }`; `503` if MongoDB is unreachable. |
+| `GET` | `/meta` | Public | — | Categories, modes, page sizes, service/technician counts, feature flags. |
+| `GET` | `/services` | Public | `q`, `category`, `mode`, `sort` (`newest`/`price-asc`/`price-desc`/`rating`), `page`, `pageSize` | Paginated service summaries. |
+| `GET` | `/services/:slug` | Public | `slug` in the path | Service detail with includes, warranty, availability note, and technician profile. |
+| `GET` | `/services/:slug/reviews` | Public | `slug`, `page`, `pageSize` | Paginated reviews plus `meta.distribution` (5★→1★ percentages). |
+
+`GET /services` filters:
+
+- `q`: 1–100 characters; searched across title, description, technician, category, and location.
+- `category`: one of `Smartphone`, `Laptop & PC`, `AC`, `Refrigerator`, `TV`, `Washing Machine`, `Electrical`.
+- `mode`: `Home Visit` or `Shop Drop-off`.
+- `page`: integer ≥ 1 (default 1).
+- `pageSize`: integer 1–100 (default 9 for public catalog endpoints).
+
+Only listings with `approval: "approved"`, `available: true`, and `deletedAt: null` are public.
+
+### Authentication endpoints
+
+| Method | Endpoint | Access | Body / parameters | Returns |
+|---|---|---|---|---|
+| `POST` | `/api/auth/sign-up/email` | Public | `{ name, email, password, accountType?, phone?, area?, bio? }` | Better Auth session and user. `accountType` is sanitized to `customer` or `technician`. |
+| `POST` | `/api/auth/sign-in/email` | Public | `{ email, password, rememberMe? }` | Better Auth session and user. |
+| `POST` | `/api/auth/sign-in/social` | Public | `{ provider: "google", callbackURL }` | OAuth redirect URL. |
+| `POST` | `/api/auth/sign-out` | Authenticated session | — | Sign-out response; clears the Better Auth session. |
+| `POST` | `/auth/token` | Authenticated session | — | `{ token, tokenType: "Bearer", expiresIn }`; also sets the `fixmate_token` cookie. |
+| `POST` | `/auth/logout` | Public | — | `{ ok: true }`; clears the JWT cookie. |
+| `GET` | `/me` | Any signed-in user | — | `{ user, role, session: { expiresAt } }`; read-only. |
+
+Profile writes use Better Auth `POST /api/auth/update-user` with `name`, `phone`, `area`, `bio`, and `image`.
+
+### Customer endpoints
+
+| Method | Endpoint | Access | Parameters / body | Returns |
+|---|---|---|---|---|
+| `POST` | `/bookings` | Customer | `{ serviceSlug, preferredDate, phone, address, problem }` | Created booking (`201`). |
+| `GET` | `/bookings` | Customer | `status?`, `page`, `pageSize` | Paginated own bookings. |
+| `GET` | `/bookings/:id` | Customer (owner) | `id` in the path | Booking detail with `statusHistory`. |
+| `POST` | `/bookings/:id/cancel` | Customer (owner) | `id` | Updated booking; only `requested` bookings can be cancelled. |
+| `POST` | `/bookings/:id/review` | Customer (owner) | `{ rating: 1–5, text: 1–1000 }` | Created review (`201`); booking must be `completed` + `paid`. |
+| `POST` | `/bookings/:id/checkout` | Customer (owner) | `id` | `{ url }` Stripe Checkout URL; booking must be `completed` with a positive `finalAmount`. |
+| `GET` | `/customer/overview` | Customer | — | Stats, counts, active booking, recent bookings, spend series. |
+| `GET` | `/customer/payments` | Customer | `page`, `pageSize` | Paginated payment history. |
+| `GET` | `/payments/:id` | Customer (owner) or admin | `id` | Payment detail. |
+| `GET` | `/payments/verify` | Customer | `session_id` query | Verified payment record from Stripe Checkout. |
+
+Example booking body:
+
+```json
+{
+  "serviceSlug": "build-your-first-pc",
+  "preferredDate": "2026-12-01",
+  "phone": "01712345678",
+  "address": "House 27, Road 9, Dhanmondi, Dhaka",
+  "problem": "The PC powers on but does not display anything on the monitor."
+}
+```
+
+### Technician endpoints
+
+| Method | Endpoint | Access | Parameters / body | Returns |
+|---|---|---|---|---|
+| `GET` | `/technician/overview` | Technician | — | Stats, earnings, paid jobs, request pipeline. |
+| `GET` | `/technician/services` | Technician | `approval?`, `available?`, `page`, `pageSize` | Own listings. |
+| `POST` | `/technician/services` | Technician | Service body (below) | Created listing (`201`), initially `pending`. |
+| `GET` | `/technician/services/:id` | Technician (owner) | `id` | Own listing detail. |
+| `PATCH` | `/technician/services/:id` | Technician (owner) | Partial service body; at least one field | Updated listing; approved/rejected listings return to `pending`. |
+| `PATCH` | `/technician/services/:id/availability` | Technician (owner) | `{ available: boolean }` | Updated listing. |
+| `DELETE` | `/technician/services/:id` | Technician (owner) | `id` | `204 No Content`; soft delete. |
+| `GET` | `/technician/requests` | Technician | `status?`, `page`, `pageSize` | Assigned jobs. |
+| `GET` | `/technician/requests/:id` | Technician (owner) | `id` | Job detail. |
+| `POST` | `/technician/requests/:id/accept` | Technician (owner) | `id` | Updated booking (`accepted`). |
+| `POST` | `/technician/requests/:id/reject` | Technician (owner) | `{ reason? }` | Updated booking (`rejected`). |
+| `POST` | `/technician/requests/:id/start` | Technician (owner) | `id` | Updated booking (`in-progress`). |
+| `POST` | `/technician/requests/:id/complete` | Technician (owner) | `{ finalAmount: positive integer ≤ 100000 }` | Updated booking (`completed`). |
+
+Service create body:
+
+```json
+{
+  "title": "Build Your First PC",
+  "category": "Laptop & PC",
+  "description": "Build your dream PC and play your favourite games.",
+  "location": "Mirpur, Dhaka",
+  "duration": "2-3 hours",
+  "price": 97,
+  "mode": "Shop Drop-off",
+  "coverImage": "https://example.com/cover.jpg",
+  "includes": ["Parts consultation", "Assembly", "Basic testing"],
+  "warranty": "30 days on workmanship",
+  "availabilityNote": "Contact for availability"
+}
+```
+
+`coverImage` must be an absolute URL or `null`. Upload a cover first through `/uploads/service-cover` and submit the returned URL.
+
+### Admin endpoints
+
+| Method | Endpoint | Access | Parameters / body | Returns |
+|---|---|---|---|---|
+| `GET` | `/admin/overview` | Admin | — | Platform stats, revenue series, role/category summaries, pending services, recent payments, booking counts. |
+| `GET` | `/admin/users` | Admin | `q?`, `role?`, `page`, `pageSize` | Paginated users. |
+| `GET` | `/admin/users/:id` | Admin | `id` | User detail. |
+| `PATCH` | `/admin/users/:id/role` | Admin | `{ role: "customer" \| "technician" \| "admin" }` | Updated user; self-change is blocked. |
+| `POST` | `/admin/users/:id/suspend` | Admin | `{ reason? }` | Suspended user; admins cannot be suspended via this endpoint. |
+| `POST` | `/admin/users/:id/restore` | Admin | `id` | Restored user. |
+| `GET` | `/admin/services` | Admin | `q?`, `category?`, `approval?`, `available?`, `page`, `pageSize` | All non-deleted listings. |
+| `GET` | `/admin/services/:id` | Admin | `id` | Listing detail. |
+| `POST` | `/admin/services/:id/approve` | Admin | `id` | Approved listing; clears the rejection reason. |
+| `POST` | `/admin/services/:id/reject` | Admin | `{ reason: 1–500 chars }` | Rejected listing; stores the reason. |
+| `GET` | `/admin/bookings` | Admin | `q?`, `status?`, `paymentStatus?`, `page`, `pageSize` | Paginated bookings. |
+| `GET` | `/admin/bookings/:id` | Admin | `id` | Booking detail. |
+| `GET` | `/admin/payments` | Admin | `page`, `pageSize` | Paginated payments. |
+| `GET` | `/admin/payments/:id` | Admin | `id` | Payment detail. |
+
+> Approve/reject work on **any non-deleted listing**, not only pending ones. Editing an approved or rejected listing resets it to `pending`. Admin role changes may target customer, technician, or admin; self-change is blocked.
+
+### Upload endpoints
+
+| Method | Endpoint | Access | Content type | Limit | Returns |
+|---|---|---|---|---|---|
+| `POST` | `/uploads/avatar` | Any signed-in user | `multipart/form-data` with `file` | 2 MB | `{ data: { url } }` (`201`). |
+| `POST` | `/uploads/service-cover` | Technician | `multipart/form-data` with `file` | 5 MB | `{ data: { url } }` (`201`). |
+
+Allowed types are JPG, PNG, and WebP. The server sniffs the MIME type from bytes and ignores the filename. Only the resulting public URL is stored in MongoDB.
+
+### Webhook endpoint
+
+| Method | Endpoint | Access | Body | Returns |
+|---|---|---|---|---|
+| `POST` | `/webhooks/stripe` | Stripe signature required | Raw JSON with `Stripe-Signature` header | `{ received: true }` on success; `400 INVALID_SIGNATURE` or `500 WEBHOOK_FAILED` on failure. |
+
+Local forwarding:
+
+```powershell
+stripe listen --forward-to localhost:4000/api/v1/webhooks/stripe
+```
+
+### Assignment-compatible aliases
+
+The backend also mounts legacy `/api` aliases for the original assignment contract:
 
 ```text
 POST   /api/bookings
@@ -191,1441 +863,718 @@ GET    /api/services
 GET    /api/services/:id
 ```
 
-Public catalog routes need no token. All other compatibility routes require a
-JWT or a valid Better Auth session and the correct role.
+Both the versioned and legacy routers use the same service layer. New frontend work should use `/api/v1`.
 
-## Deployment notes
+### Representative response shapes
 
-1. Create a MongoDB Atlas cluster and set `MONGODB_URI`.
-2. Deploy the backend and set `BETTER_AUTH_URL` / `FRONTEND_URL` to the public
-   origins.
-3. Deploy the frontend and set `API_URL` / `NEXT_PUBLIC_API_URL`.
-4. Add the deployed Stripe webhook:
-   `https://api.your-domain.com/api/v1/webhooks/stripe`
-   with `checkout.session.completed` and `payment_intent.succeeded`.
-5. Set `UPLOAD_DRIVER=imgbb` and `IMGBB_API_KEY`, or configure S3/R2.
-6. Run `npm run seed` and `npx tsx scripts/migrate-schema.ts` against Atlas.
-7. Test sign-up, booking, payment, review, upload, and reload behavior on the
-   live site.
-
-## Known limitations
-
-- The live URL must be added after deployment.
-- The strict “exactly four MongoDB collections” wording is covered by the four
-  core collections plus optional review, technician-profile, and audit
-  extensions.
-- The JWT middleware keeps a Better Auth session fallback for server-rendered
-  pages; invalid JWTs still return 401.
-- Real ImgBB uploads require a valid `IMGBB_API_KEY`.
-
----
-
-# FixMate Fullstack Backend Plan
-
-This document is the implementation contract for moving FixMate from a Next.js frontend with static preview data to a fullstack app with a **separate Express API server**.
-
-Use it as the source of truth. Work one phase at a time. Do not start a later phase until the current phase's acceptance checks pass.
-
-> **Start here:** implement Phase 0 first. Do not write marketplace endpoints until Express auth, cookies, and Next session reads work end to end.
-
----
-
-## How to use this file
-
-Give the implementation agent prompts like:
-
-- `Implement Phase 0 only from README.md. Stop after the acceptance checks.`
-- `Implement Phase 1 only from README.md. Do not build endpoints yet.`
-- `Implement Phase 3 from README.md. Keep the existing UI design unchanged.`
-- `Implement Phase 4 from README.md. Add the missing booking form.`
-- `Implement Phase 7 from README.md. Use Stripe test mode.`
-
-Rules for every phase:
-
-- Keep the existing visual design and Tailwind styles.
-- Keep public pages server-rendered where they are today.
-- Never trust client-provided roles, prices, statuses, approval values, or payment status.
-- Update this README's checkboxes as work is completed.
-- Do not commit `.env` files or secrets.
-
----
-
-## 1. Current state
-
-The frontend is a Next.js 16 App Router app with Better Auth and MongoDB.
-
-| Area | Current source | Persisted? | Backend work needed |
-|---|---|---:|---|
-| Auth | Better Auth + MongoDB | Yes | Move to Express |
-| Avatar | `src/app/api/avatar` → `data/avatars` | Yes, local disk | Move to Express + object storage |
-| Services | `src/lib/services.ts` — 15 hardcoded | No | Catalog API + MongoDB |
-| Service detail/reviews | `src/lib/service-details.ts` | No | Detail + reviews API |
-| Customer bookings | `src/lib/customer-data.ts` | No | Bookings API |
-| Customer payments | `src/lib/customer-data.ts` | No | Payments + Stripe |
-| Technician services | `src/lib/technician-data.ts` | No | Listing CRUD API |
-| Technician requests | `src/lib/technician-data.ts` | No | Booking workflow API |
-| Admin users/services/bookings/payments | `src/lib/admin-data.ts` | No | Admin APIs |
-| Dashboard stats/charts | Computed from preview arrays | No | Aggregation endpoints |
-| Role change / suspend | Local state in `admin-users.tsx` | No | Admin user APIs |
-| Service approve/reject | Local state in `admin-service-approval.tsx` | No | Admin service APIs |
-| Add service | Local `submitted` state | No | Create listing API |
-| Edit service | Placeholder button | No | Update listing API |
-| Pay now | Local state in `customer-bookings.tsx` | No | Stripe Checkout + webhook |
-| Customer cancel | Local state | No | Cancel endpoint |
-| Technician accept/reject/start/complete | Local state | No | Booking transition APIs |
-| Reviews | Hardcoded in `service-details.ts` | No | Reviews collection |
-| CSV exports | Built client-side from props | Works once data is real | Optional server export |
-
-### Critical UX gaps
-
-1. **There is no booking request form yet.**
-   On `/services/[id]`, “Request this repair” only links to `/dashboard/customer/bookings`. A real backend needs a form/modal collecting preferred date, phone, address, and problem description.
-
-2. **Every dashboard action is local-only.**
-   Cancel, pay, accept, reject, start, complete, approve, reject, role change, suspend, delete, and availability toggle do not persist.
-
-3. **`getAppRole()` has a role-change trap.**
-   It returns `admin` from `role`, otherwise uses `accountType`. If an admin changes a customer to `technician` by setting only `role`, `getAppRole` still returns `customer`. The backend must update **both** `role` and `accountType`, or `getAppRole` must treat `role === "technician"` as technician.
-
-4. **Editing an approved service must reset it to pending.**
-   The UI already says this. The backend must enforce it.
-
-5. **Payment status must never be client-controlled.**
-   `paymentStatus: "paid"` must only be set by a verified Stripe webhook.
-
-6. **Public service visibility needs one rule.**
-   Public listings = `approval === "approved" && available === true && !deletedAt`.
-
-7. **The dashboard shell imports preview data directly.**
-   `dashboard-shell.tsx` imports `PENDING_SERVICES`, `TECHNICIAN_SERVICES`, and `TECHNICIAN_REQUESTS` for sidebar counts. Once real data exists, those counts must come from the server/layout.
-
----
-
-## 2. Chosen architecture
-
-Use a separate Express API server. Next.js becomes the frontend and does not own business data.
-
-```text
-Browser
-  │
-  ├── Next.js pages / server components
-  │       └── fetch Express /api/v1/* with forwarded cookies
-  │
-  └── Next.js client components
-          └── fetch Express /api/v1/* with credentials
-
-Express API
-  ├── Better Auth          /api/auth/*
-  ├── Marketplace routes   /api/v1/*
-  ├── MongoDB
-  ├── Stripe
-  └── Object storage
-```
-
-### Decision
-
-**Move Better Auth to Express.**
-Do not keep one auth instance in Next and one in Express. Two auth instances create cookie, session, and type duplication problems.
-
-### Repository layout
-
-Recommended:
-
-```text
-C:\web_dev\fix_mate\
-  fix_mate_front_end\      # existing Next app
-  fix_mate_backend\        # new Express app
-```
-
-A sibling folder is cleaner. If the backend is placed inside the frontend repo:
-
-- Add `"backend"` to `exclude` in `tsconfig.json`.
-- Add `backend/**` to `globalIgnores` in `eslint.config.mjs`.
-
-Otherwise `npx tsc --noEmit` and `npm run lint` will try to process Express files with the Next config.
-
-### Backend file tree
-
-```text
-fix_mate_backend/
-  src/
-    index.ts                 # Express entrypoint, middleware order
-    config/env.ts            # env validation
-    db/
-      mongo.ts               # MongoClient + database
-      collections.ts         # typed collections
-      indexes.ts             # ensureIndexes()
-    auth.ts                  # Better Auth instance
-    roles.ts                 # getAppRole()
-    types/
-      models.ts              # collection documents/DTOs
-    middleware/
-      auth.ts                # requireUser / requireRole
-      validate.ts            # body/query/params validation
-      request-context.ts     # request IDs + access logs
-      errors.ts              # centralized error handler
-    http/
-      api-error.ts           # ApiError + factories
-      status.ts              # status code conventions
-      response.ts            # ok(), fail(), paginated()
-    validation/
-      auth.ts
-      common.ts
-      format.ts
-      services.ts
-      bookings.ts
-      users.ts
-      reviews.ts
-      payments.ts
-    routes/
-      me.ts
-      catalog.ts
-      bookings.ts
-      customer.ts
-      technician.ts
-      admin.ts
-      payments.ts
-      reviews.ts
-      uploads.ts
-      webhooks.ts
-    services/                # business logic
-      catalog.ts
-      bookings.ts
-      technician.ts
-      admin.ts
-      payments.ts
-      reviews.ts
-    lib/
-      logger.ts              # structured JSON logs
-      stripe.ts
-      storage.ts
-  scripts/
-    seed.ts
-    seed-data.ts             # demo service/user fixture
-    create-admin.ts
-  .env
-  package.json
-  tsconfig.json
-```
-
----
-
-## 3. Non-negotiable backend rules
-
-### Authentication and authorization
-
-- Express owns Better Auth.
-- Next server components read the session from Express by forwarding the browser cookie.
-- Express endpoints must authenticate every request themselves.
-- Next page guards are not enough; APIs must also enforce access.
-- Object-level ownership is required:
-  - Customer can read only their bookings/payments.
-  - Technician can read only assigned bookings and own services.
-  - Admin can read all.
-- Admin cannot demote themselves.
-- Suspended users cannot sign in.
-- Role changes must sync `role` and `accountType`.
-
-### Public visibility
-
-- Public service list/detail only returns `approval === "approved" && available === true && !deletedAt`.
-- Pending/rejected/paused/deleted services never appear publicly.
-- Unknown slug returns `404`.
-
-### Booking rules
-
-```text
-requested
-  ├── accepted     (technician)
-  ├── rejected     (technician)
-  └── cancelled    (customer)
-accepted
-  └── in-progress  (technician)
-in-progress
-  └── completed    (technician, sets finalAmount)
-completed
-  └── paymentStatus paid  (Stripe webhook only)
-```
-
-Allowed transitions:
-
-```ts
-const ALLOWED = {
-  requested: ["accepted", "rejected", "cancelled"],
-  accepted: ["in-progress"],
-  "in-progress": ["completed"],
-  completed: [],
-  cancelled: [],
-  rejected: [],
-};
-```
-
-Use conditional updates so two devices cannot perform the same transition twice:
-
-```ts
-await bookings.findOneAndUpdate(
-  { _id: id, technicianId: session.user.id, status: "requested" },
-  { $set: { status: "accepted", acceptedAt: new Date() } },
-);
-```
-
-If no document matches, return `409 INVALID_STATE` or `403`.
-
-### Service approval rules
-
-```text
-pending -> approved | rejected
-approved -> pending  (on edit)
-rejected -> pending  (on edit or re-review)
-```
-
-- Only admin can approve/reject.
-- Approving sets `available = true`.
-- Editing an approved listing resets `approval = "pending"`.
-- Use soft delete (`deletedAt`) so historical bookings still reference the service.
-
-### Payment rules
-
-- Checkout is allowed only for the owning customer.
-- Checkout is allowed only for `completed` + `unpaid`.
-- Amount comes from the server-side `finalAmount`.
-- Stripe webhook verifies the raw body signature.
-- Webhook is idempotent.
-- `paymentStatus` is changed only by the webhook.
-- Refunds are admin-only.
-
-### Data rules
-
-- Never accept `customerId`, `technicianId`, `basePrice`, `finalAmount`, `status`, `paymentStatus`, `approval`, `role`, or `plan` from a public client.
-- Snapshot service title/category/mode/base price into the booking at creation time.
-- Keep `serviceId` and `serviceSlug` on the booking.
-- Store whole USD for now; convert to cents at the Stripe boundary.
-- Prefer string UUIDs for business `_id`s. Use human-readable `slug` and `bookingNumber` in the UI.
-
-### Mongo transactions
-
-MongoDB transactions require a replica set. Atlas supports them. A local standalone `mongod` usually does not.
-
-If local Mongo is standalone:
-
-- Use unique indexes.
-- Use conditional `findOneAndUpdate`.
-- Make payment/booking changes idempotent instead of multi-document transactions.
-
----
-
-## 4. Phase plan
-
-## Phase 0 — Express skeleton and auth migration
-
-**Goal:** Express runs, Better Auth works, Next can sign in/out, and protected pages still work.
-
-### Tasks
-
-- [x] Create `fix_mate_backend` with TypeScript, Express, MongoDB, Better Auth, Zod.
-- [x] Install backend dependencies.
-- [x] Copy/adapt `mongo.ts`, `auth.ts`, and `roles.ts`.
-- [x] Add `config/env.ts` validation.
-- [x] Mount Better Auth before `express.json()`.
-- [x] Add CORS with credentials and the exact frontend origin.
-- [x] Add `GET /api/v1/health` with a Mongo ping.
-- [x] Move `scripts/create-admin.ts` to the backend and repoint/remove the frontend `auth:admin` script.
-- [x] Move avatar upload to Express or add a temporary proxy.
-- [x] Update the sign-up and profile avatar fetches to the Express upload URL.
-- [x] Update Next `authClient` base URL.
-- [x] Update Next `authz.ts` to fetch the session from Express.
-- [x] Remove or proxy `src/app/api/auth/[...all]/route.ts`.
-- [x] Update Google OAuth callback URL, if Google is enabled.
-
-### Backend dependencies
-
-```bash
-npm i express cors helmet zod mongodb better-auth @better-auth/mongo-adapter multer dotenv
-npm i -D typescript tsx @types/node @types/express @types/cors @types/multer
-# Phase 7 adds: stripe
-```
-
-### Express entrypoint order
-
-```ts
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import { toNodeHandler } from "better-auth/node";
-import { auth } from "./auth";
-
-const app = express();
-
-app.use(helmet());
-
-app.use(
-  cors({
-    origin: [process.env.FRONTEND_URL ?? "http://localhost:3000"],
-    credentials: true,
-  }),
-);
-
-// Better Auth MUST be mounted before express.json().
-// Express 5 uses *splat; Express 4 uses *.
-app.all("/api/auth/*splat", toNodeHandler(auth));
-
-// Stripe webhook must receive the raw body.
-// Mount it before express.json() when Phase 7 is implemented.
-// app.post("/api/v1/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhook);
-
-app.use(express.json({ limit: "1mb" }));
-
-app.get("/api/v1/health", (_req, res) => {
-  res.json({ ok: true });
-});
-
-app.listen(Number(process.env.PORT ?? 4000));
-```
-
-### Auth config changes
-
-```ts
-const baseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:4000";
-
-const trustedOrigins = [
-  process.env.FRONTEND_URL ?? "http://localhost:3000",
-  baseURL,
-];
-```
-
-### Express API auth middleware
-
-Use `fromNodeHeaders`:
-
-```ts
-import { fromNodeHeaders } from "better-auth/node";
-import { auth } from "../auth";
-import { getAppRole } from "../roles";
-
-export async function requireRole(request, response, next, roles) {
-  const session = await auth.api.getSession({
-    headers: fromNodeHeaders(request.headers),
-  });
-
-  if (!session) {
-    return response.status(401).json({
-      error: { code: "UNAUTHENTICATED", message: "Sign in required." },
-    });
-  }
-
-  const role = getAppRole(session.user);
-
-  if (!roles.includes(role)) {
-    return response.status(403).json({
-      error: { code: "FORBIDDEN", message: "You do not have access." },
-    });
-  }
-
-  request.session = session;
-  request.appRole = role;
-  next();
-}
-```
-
-Wrap this in a small factory such as `requireRole(["admin"])` rather than passing roles on every call.
-
-### Next changes
-
-`src/lib/auth-client.ts`:
-
-```ts
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  fetchOptions: {
-    credentials: "include",
-  },
-  plugins: [/* additional fields + adminClient */],
-});
-```
-
-`src/lib/authz.ts`:
-
-```ts
-import { cache } from "react";
-import { headers } from "next/headers";
-
-export const getSession = cache(async () => {
-  const cookie = (await headers()).get("cookie") ?? "";
-
-  const response = await fetch(`${process.env.API_URL}/api/auth/get-session`, {
-    headers: { cookie },
-    cache: "no-store",
-  });
-
-  if (!response.ok) return null;
-
-  const data = await response.json();
-
-  return data?.session ? data : null;
-});
-```
-
-### Auth type problem
-
-`src/lib/auth-client.ts` currently imports `type { auth } from "@/lib/auth"` for `inferAdditionalFields`. Once auth moves to Express:
-
-- Do not import the Express server module into the browser bundle.
-- Move the user additional-field types into a shared type file, or define them manually in the frontend.
-
-### Acceptance checks
-
-- [x] `GET http://localhost:4000/api/v1/health` returns `200`.
-- [x] `POST http://localhost:4000/api/auth/sign-up/email` creates a user.
-- [x] Next sign-up works.
-- [x] Next sign-in sets a cookie and redirects to `/dashboard`.
-- [x] Express `GET /api/auth/get-session` with that cookie returns the user.
-- [x] Next protected pages still redirect correctly.
-- [x] Sign-out works.
-- [x] Existing avatar upload still works after the auth move.
-
----
-
-## Phase 1 — Collections, indexes, and seed data
-
-**Goal:** MongoDB contains the real 15 services, technician profiles, and demo users. No endpoints beyond auth/health yet.
-
-### Tasks
-
-- [x] Create `services`, `bookings`, `payments`, `reviews`, `technicianProfiles` collections.
-- [x] Add TypeScript types/DTOs for each.
-- [x] Add `ensureIndexes()`.
-- [x] Add `scripts/seed.ts`.
-- [x] Add `"seed": "tsx scripts/seed.ts"` to `package.json`.
-- [x] Seed demo users through `auth.api.signUpEmail` so passwords are hashed correctly.
-- [x] Seed technician profiles and admin role.
-- [x] Seed the 15 listings from `src/lib/services.ts`.
-- [x] Seed includes, warranty, and reviews from `src/lib/service-details.ts`.
-- [x] Optionally seed preview bookings/payments for demo dashboards. *(Implemented in Step 10 as eight idempotent demo bookings across all statuses and two paid demo payments.)*
-- [x] Run indexes once at seed/deploy time, not on every request.
-
-### Seed data mapping
-
-The current data uses inconsistent IDs:
-
-- Public listings use slugs like `iphone-13-screen-replacement`.
-- Admin services use IDs like `s1`.
-- Customer bookings use IDs like `b10`.
-- Technician services use IDs like `s6`.
-
-The seed script must settle on:
-
-- `services.slug` — stable public identifier.
-- `services._id` — UUID.
-- `bookings.bookingNumber` — display identifier.
-- `bookings.serviceSlug` — public link.
-- Legacy IDs — store as `legacyId` if needed for migration.
-
-### Acceptance checks
-
-- [x] MongoDB has 15 services.
-- [x] Three technician users exist.
-- [x] `slug` is unique.
-- [x] Public services have `approval: "approved"` and `available: true`.
-- [x] Indexes exist.
-- [x] A small script can read 15 services from MongoDB with the shape the UI expects.
-
----
-
-## Phase 2 — Shared API plumbing
-
-**Goal:** Every endpoint has the same auth, validation, error, and pagination behavior.
-
-### Tasks
-
-- [x] Add `ApiError`.
-- [x] Add response helpers: `ok()`, `fail()`, `paginated()`.
-- [x] Add Zod schemas for every request body and query.
-- [x] Add auth middleware.
-- [x] Add validation middleware.
-- [x] Add centralized error handler.
-- [x] Add request IDs and structured logs.
-- [x] Add pagination defaults:
-  - Public catalog: 9
-  - Dashboard tables: 20
-  - Maximum: 100
-- [x] Add status code conventions.
-- [x] Add `GET /api/v1/me` (optional if the frontend reads `/api/auth/get-session` directly). *(Implemented as a read-only user/role endpoint.)*
-- [x] Decide whether profile updates use Better Auth `/api/auth/update-user` or `PATCH /api/v1/me`. Do not implement both paths. *(Chosen: profile updates stay on `/api/auth/update-user`.)*
-
-### Response envelope
-
-Success:
+**Service summary**
 
 ```json
 {
-  "data": {},
-  "meta": {}
+  "id": "build-your-first-pc",
+  "title": "Build Your First PC",
+  "category": "Laptop & PC",
+  "description": "Build your dream PC and play your favourite games.",
+  "location": "Mirpur, Dhaka",
+  "duration": "2-3 hours",
+  "rating": 0,
+  "reviews": 0,
+  "technician": "Addit Islam",
+  "price": 97,
+  "mode": "Shop Drop-off",
+  "createdAt": "2026-11-26",
+  "coverImage": "https://example.com/cover.jpg"
 }
 ```
 
-Error:
+**Service detail** adds:
 
 ```json
 {
-  "error": {
-    "code": "INVALID_STATE",
-    "message": "This booking can no longer be cancelled.",
-    "details": []
+  "includes": ["Parts consultation", "Assembly", "Basic testing"],
+  "warranty": "30 days on workmanship",
+  "availabilityNote": "Contact for availability",
+  "technicianProfile": {
+    "id": "user-id",
+    "name": "Addit Islam",
+    "bio": "PC builder and repair technician.",
+    "area": "Mirpur, Dhaka",
+    "rating": 0,
+    "jobs": 0,
+    "plan": "free",
+    "repliesIn": "Usually replies within an hour",
+    "image": null
   }
 }
 ```
 
-### Status codes
-
-- `200` — read/update success
-- `201` — created
-- `204` — deleted/no content
-- `400` — malformed request
-- `401` — not signed in
-- `403` — wrong role/ownership
-- `404` — not found
-- `409` — invalid state/conflict
-- `422` — validation failure
-- `429` — rate limited
-- `500` — unexpected error
-
-### Acceptance checks
-
-- [x] No session → `401`.
-- [x] Wrong role → `403`.
-- [x] Invalid input → `400`/`422`.
-- [x] Not found → `404`.
-- [x] Invalid transition → `409`.
-- [x] Errors always use the same envelope.
-
----
-
-## Phase 3 — Public catalog API and frontend switch
-
-**Goal:** Public pages read from MongoDB through Express instead of static arrays.
-
-### Endpoints
-
-- [x] `GET /api/v1/meta`
-- [x] `GET /api/v1/services`
-- [x] `GET /api/v1/services/:slug`
-- [x] `GET /api/v1/services/:slug/reviews`
-- [ ] `GET /api/v1/home` (P1) *(Deferred; the homepage uses `/meta` + `/services`.)*
-- [ ] `GET /api/v1/technicians/:id` (P1) *(Deferred; service detail includes `technicianProfile`.)*
-
-### Query parameters
-
-```text
-q, category, mode, sort=newest|price-asc|price-desc|rating, page, pageSize
-```
-
-### Frontend files
-
-- `src/app/page.tsx` and home sections (fetch meta + featured services, pass props down)
-- `src/app/services/page.tsx`
-- `src/app/services/[id]/page.tsx`
-- `src/lib/home-data.ts` (static copy only)
-- `src/lib/api.ts` (server-side API fetch helper)
-- `src/lib/catalog.ts` (catalog DTOs + fetchers)
-- `src/components/service-card.tsx` should keep its current shape
-
-Keep `src/lib/service-styles.ts`; it is pure frontend styling.
-
-### Caching
-
-- Public catalog: `fetch` revalidate is 60 seconds; Express also sends `Cache-Control: public, max-age=60, stale-while-revalidate=300`.
-- Dashboard data: `no-store`.
-
-The review distribution bars remain a UI placeholder until Phase 8 replaces them with an aggregation.
-
-### Acceptance checks
-
-- [x] Search, category, mode, sort, and pagination still work through the URL.
-- [x] Unknown slug returns `404`.
-- [x] Only approved + available services appear.
-- [x] `/services/[id]` no longer imports `SERVICES` or `SERVICE_DETAILS`.
-- [x] The visual design is unchanged.
-
----
-
-## Phase 4 — Booking creation and customer flows
-
-**Goal:** A customer can request a repair, see it after refresh, and cancel it while `requested`.
-
-### Endpoints
-
-- [x] `POST /api/v1/bookings`
-- [x] `GET /api/v1/bookings`
-- [x] `GET /api/v1/bookings/:id`
-- [x] `POST /api/v1/bookings/:id/cancel`
-- [x] `GET /api/v1/customer/overview`
-- [x] `GET /api/v1/customer/payments`
-- [x] `GET /api/v1/payments/:id`
-
-### Booking creation body
+**Booking**
 
 ```json
 {
-  "serviceSlug": "split-ac-deep-cleaning",
-  "preferredDate": "2026-11-26",
-  "phone": "+880 1712 345678",
-  "address": "Flat 5B, House 27, Road 9, Dhanmondi, Dhaka",
-  "problem": "The bedroom AC smells damp and cooling is weak."
+  "id": "booking-uuid",
+  "bookingNumber": "FM-20261126-AB12",
+  "serviceId": "service-uuid",
+  "serviceSlug": "build-your-first-pc",
+  "title": "Build Your First PC",
+  "serviceImage": "https://example.com/cover.jpg",
+  "category": "Laptop & PC",
+  "technician": "Addit Islam",
+  "preferredDate": "2026-12-01",
+  "basePrice": 97,
+  "finalAmount": null,
+  "status": "requested",
+  "paymentStatus": "unpaid",
+  "reviewed": false,
+  "createdAt": "2026-11-26",
+  "updatedAt": "2026-11-26",
+  "phone": "01712345678",
+  "address": "House 27, Road 9, Dhanmondi, Dhaka",
+  "problem": "The PC powers on but does not display anything on the monitor."
 }
 ```
 
-Server must:
+Booking detail additionally includes:
 
-1. Require role `customer`.
-2. Load the service and reject unless approved + available.
-3. Copy `basePrice`, `serviceTitle`, `category`, `mode`, `technicianId`.
-4. Create `status: "requested"`, `paymentStatus: "unpaid"`.
-5. Add the first `statusHistory` entry.
-6. Ignore any client-sent price, technician, status, or payment status.
-
-### Frontend changes
-
-- [x] Add the missing booking form/modal on `/services/[id]`.
-- [x] Replace `CustomerBookings` local cancel state with the cancel endpoint.
-- [x] Replace `CustomerPayments` props with API data.
-- [x] Replace customer overview static imports with the overview endpoint.
-- [x] Add loading, empty, and error states.
-
-### Acceptance checks
-
-- [x] New request appears for the correct customer, technician, and admin. *(Verified in MongoDB and APIs; technician/admin dashboards switch to live data in Phases 5/6.)*
-- [x] Cancel only works while `requested`.
-- [x] Refresh preserves the booking.
-- [x] No price is accepted from the browser.
-- [x] Another customer cannot read the booking.
-
-The customer “Pay now” button no longer writes `paymentStatus` locally; it shows a notice until Stripe checkout is added in Phase 7.
-
----
-
-## Phase 5 — Technician listing and request flows
-
-**Goal:** Technicians can manage their own listings and move assigned jobs through the workflow.
-
-### Endpoints
-
-- [x] `GET /api/v1/technician/overview`
-- [x] `GET /api/v1/technician/services`
-- [x] `POST /api/v1/technician/services`
-- [x] `GET /api/v1/technician/services/:id`
-- [x] `PATCH /api/v1/technician/services/:id`
-- [x] `DELETE /api/v1/technician/services/:id`
-- [x] `PATCH /api/v1/technician/services/:id/availability`
-- [x] `GET /api/v1/technician/requests`
-- [x] `GET /api/v1/technician/requests/:id`
-- [x] `POST /api/v1/technician/requests/:id/accept`
-- [x] `POST /api/v1/technician/requests/:id/reject`
-- [x] `POST /api/v1/technician/requests/:id/start`
-- [x] `POST /api/v1/technician/requests/:id/complete`
-- [ ] `GET /api/v1/technician/earnings` (P1) *(Deferred; the overview already shows paid earnings.)*
-
-### Rules
-
-- Technician can only see/edit own services.
-- Technician can only see bookings where `technicianId` matches.
-- Accept/reject only from `requested`.
-- Start only from `accepted`.
-- Complete only from `in-progress`, with `finalAmount > 0`.
-- Editing an approved service resets it to `pending`.
-- Delete is a soft delete.
-- Customer phone/address should only be visible to the assigned technician. Prefer hiding it until the request is accepted.
-
-### Frontend changes
-
-- [x] Wire `AddServiceForm` submit to `POST`.
-- [x] Add the missing edit-service form and wire `PATCH`.
-- [x] Wire availability toggle.
-- [x] Wire delete.
-- [x] Replace `TechnicianRequests` local status changes with API calls.
-- [x] Replace the completion `window.prompt` with a proper modal if possible.
-
-Cover uploads are wired in Phase 8; new listings store the uploaded `coverImage` URL. Listings without a cover keep the category art. The technician sidebar counts in `dashboard-shell.tsx` still come from preview arrays until Phase 6. Requested bookings hide customer phone/address until the technician accepts.
-
-### Acceptance checks
-
-- [x] A technician cannot modify another technician's listing or booking.
-- [x] Approved service edit removes it from public view until re-approved.
-- [x] Booking state transitions are enforced server-side.
-- [x] Completion stores the final amount exactly once.
-
----
-
-## Phase 6 — Admin flows
-
-**Goal:** Admin actions persist, are authorized, and are audited.
-
-### Endpoints
-
-- [x] `GET /api/v1/admin/overview`
-- [x] `GET /api/v1/admin/users`
-- [x] `GET /api/v1/admin/users/:id`
-- [x] `PATCH /api/v1/admin/users/:id/role`
-- [x] `POST /api/v1/admin/users/:id/suspend`
-- [x] `POST /api/v1/admin/users/:id/restore`
-- [x] `GET /api/v1/admin/services`
-- [x] `GET /api/v1/admin/services/:id`
-- [x] `POST /api/v1/admin/services/:id/approve`
-- [x] `POST /api/v1/admin/services/:id/reject`
-- [x] `GET /api/v1/admin/bookings`
-- [x] `GET /api/v1/admin/bookings/:id`
-- [x] `GET /api/v1/admin/payments`
-- [x] `GET /api/v1/admin/payments/:id`
-- [ ] `POST /api/v1/admin/users/:id/verify-technician` (P1) *(Deferred.)*
-- [ ] `GET /api/v1/admin/exports/:dataset` (P1) *(Deferred; client-side CSV export still works for loaded data.)*
-- [ ] `GET /api/v1/admin/audit-logs` (P2) *(Audit entries are written to the `auditLogs` collection; the read endpoint is deferred.)*
-
-### Rules
-
-- Admin cannot demote themselves.
-- Customer ↔ technician changes must sync `role` and `accountType`.
-- Suspension uses Better Auth's admin ban mechanism.
-- Approve/reject only from `pending`, using a conditional update.
-- Rejection stores a reason.
-- Write an audit log for every role, suspend, approve, and reject action.
-- Never return password hashes or session tokens.
-- Only admins can hit admin endpoints.
-
-### Frontend changes
-
-- [x] Replace `admin-users.tsx` local role/suspend state.
-- [x] Replace `admin-service-approval.tsx` local approval state.
-- [x] Replace `admin-transactions.tsx` props with API data.
-- [x] Pass real sidebar counts from the dashboard layout instead of importing preview arrays in `dashboard-shell.tsx`.
-
-Role changes are limited to customer ↔ technician; the admin option is disabled and admin promotion stays in the seed/admin tooling. Approve/reject only applies to `pending` listings, so a rejected listing returns to review only when the technician edits it. Admin payments are empty until Phase 7. The admin user table requests up to 100 rows and has no pagination controls yet.
-
-### Acceptance checks
-
-- [x] Admin changes persist after refresh.
-- [x] Admin cannot demote themselves.
-- [x] Suspended users cannot sign in.
-- [x] Non-admin requests to admin endpoints return `403`.
-- [x] Approve/reject cannot be applied twice to the same pending item.
-
----
-
-## Phase 7 — Stripe payments
-
-**Goal:** Customers pay completed jobs through Stripe; payments are recorded exactly once.
-
-### Endpoints
-
-- [x] `POST /api/v1/bookings/:id/checkout`
-- [x] `POST /api/v1/webhooks/stripe`
-- [ ] `GET /api/v1/payments/:id/invoice` (P1) *(Deferred; the in-page invoice modal still uses payment data.)*
-
-### Tasks
-
-- [x] Install `stripe` in the backend.
-- [x] Add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
-- [x] Create Checkout Session from server-side `finalAmount`.
-- [x] Store `providerSessionId`.
-- [x] Verify webhook signature using the raw body.
-- [x] Handle `checkout.session.completed` and `payment_intent.succeeded`.
-- [x] Insert exactly one payment per booking.
-- [x] Mark booking paid only after webhook verification.
-- [x] Add idempotency unique indexes.
-
-### Critical middleware order
-
-The Stripe webhook route must receive the raw request body. Mount it before `express.json()`:
-
-```ts
-app.post(
-  "/api/v1/webhooks/stripe",
-  express.raw({ type: "application/json" }),
-  stripeWebhookHandler,
-);
-
-app.use(express.json());
-```
-
-### Local testing
-
-```bash
-stripe listen --forward-to localhost:4000/api/v1/webhooks/stripe
-```
-
-### Acceptance checks
-
-- [x] Test card `4242 4242 4242 4242` creates one payment. *(Verified live on 2026-11-21: one payment, booking marked paid, test data deleted afterwards.)*
-- [x] Replaying the webhook does not create a duplicate.
-- [x] Refreshing the customer dashboard shows paid.
-- [x] Technician earnings include the paid amount.
-- [x] No client call can mark a booking paid.
-
-`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set in the backend `.env`. The webhook secret is now a valid `whsec_...` value. Checkout reuses an open session for the same booking; a completed session returns `409 PAYMENT_PROCESSING`. The success and cancel URLs both return to `/dashboard/customer/bookings`.
-
-The live card test used the temporary Stripe endpoint `we_1UeG3lDbTSRRDIHKe7exnR40` and a Cloudflare quick tunnel. That tunnel URL is ephemeral: stop `cloudflared` when done, and either delete the temporary endpoint in the Stripe Dashboard or update it with a permanent URL. The signing secret is tied to the endpoint.
-
----
-
-## Phase 8 — Reviews and uploads
-
-**Goal:** Customers can review paid jobs; images live in object storage.
-
-### Endpoints
-
-- [x] `POST /api/v1/bookings/:id/review`
-- [x] `GET /api/v1/services/:slug/reviews`
-- [ ] `GET /api/v1/me/reviews` (P2)
-- [x] `POST /api/v1/uploads/avatar`
-- [x] `POST /api/v1/uploads/service-cover`
-
-### Review rules
-
-- Only the owning customer can review.
-- Only `completed` + `paid` bookings.
-- One review per booking.
-- `rating` 1–5; `text` length-limited.
-- Recompute `ratingAvg` and `reviewCount` on the service.
-- Replace `REVIEW_DISTRIBUTION` hardcoding with an aggregation.
-
-### Upload rules
-
-- Replace local `data/avatars` with S3/R2/Cloudinary.
-- Validate MIME type and size server-side.
-- Do not trust the browser-provided filename.
-- Store only the public URL in MongoDB.
-- Avatar max: 2 MB. Service cover max: 5 MB.
-
-### Acceptance checks
-
-- [x] One review per paid booking.
-- [x] Service rating updates.
-- [x] Invalid rating/text rejected.
-- [ ] Avatar and cover uploads work in production storage. *(Code complete and verified with `UPLOAD_DRIVER=local`. Set `UPLOAD_DRIVER=s3` plus the `S3_*` keys to verify a real bucket.)*
-- [x] Old local-disk route is no longer required.
-
-Reviews are created only for the owning customer on a `completed` + `paid` booking. The unique `reviews.bookingId` index enforces one review per booking. Creating a review recomputes `services.ratingAvg` and `services.reviewCount` from visible review documents, and `GET /api/v1/services/:slug/reviews` returns the 5★→1★ percentage breakdown in `meta.distribution` (no frontend hardcoding). Customer booking DTOs now include `reviewed`, which drives the “Leave a review” / “Reviewed” action.
-
-Uploads go through `src/lib/storage.ts`. `UPLOAD_DRIVER=local` (development default) writes to `data/uploads` and serves files from `/api/v1/uploads/files`; `UPLOAD_DRIVER=s3` writes to AWS S3, Cloudflare R2, MinIO, or any S3-compatible bucket. The MIME type is detected from the file bytes (not the browser header or filename), extensions come from that detection, and object keys are server-generated UUIDs. The legacy `/api/v1/uploads/avatars` static mount remains only for files uploaded before Phase 8.
-
----
-
-## Phase 9 - Hardening and tests
-
-### Tasks
-
-- [ ] Validate every body/query with Zod.
-- [ ] Enforce object-level ownership on every read.
-- [ ] Add pagination everywhere.
-- [ ] Escape regex search input.
-- [ ] Add rate limiting for auth, booking creation, and uploads.
-- [ ] Add request IDs and structured logs.
-- [ ] Add audit logs for admin actions.
-- [ ] Use conditional updates for all state transitions.
-- [ ] Use unique indexes for idempotency.
-- [ ] Add tests for:
-  - [ ] `401`/`403`
-  - [ ] IDOR (another user's booking/service/payment)
-  - [ ] Booking state transitions
-  - [ ] Payment idempotency
-  - [ ] Role changes
-  - [ ] Approval reset on edit
-
-Suggested test stack if adding tooling:
-
-```bash
-npm i -D vitest @vitest/coverage-v8 supertest @types/supertest mongodb-memory-server
-```
-
-If you do not want a test runner yet, use a manual smoke-test script and keep the checks above.
-
----
-
-## Phase 10 — Deployment
-
-### Environment
-
-Backend `.env`:
-
-```env
-PORT=4000
-MONGODB_URI=
-MONGODB_DB=fixmate
-BETTER_AUTH_SECRET=
-BETTER_AUTH_URL=https://api.your-domain.com
-FRONTEND_URL=https://your-domain.com
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-UPLOAD_DRIVER=s3
-S3_BUCKET=
-S3_REGION=
-S3_ACCESS_KEY_ID=
-S3_SECRET_ACCESS_KEY=
-# Optional for R2/MinIO and custom/CDN public URLs:
-S3_ENDPOINT=
-S3_PUBLIC_URL=
-S3_FORCE_PATH_STYLE=false
-ADMIN_EMAIL=
-ADMIN_PASSWORD=
-```
-
-Frontend `.env`:
-
-```env
-API_URL=https://api.your-domain.com
-NEXT_PUBLIC_API_URL=https://api.your-domain.com
-```
-
-### Deployment order
-
-- [ ] Create MongoDB Atlas cluster.
-- [ ] Run indexes and seed script.
-- [ ] Deploy Express.
-- [ ] Configure Stripe webhook URL.
-- [ ] Configure object storage.
-- [ ] Deploy Next.
-- [ ] Run the end-to-end acceptance scenario.
-
-### Cookies and CORS in production
-
-- Use an exact frontend origin, never `*` with credentials.
-- Same-site subdomains: `SameSite=Lax` can work.
-- Different registrable domains: use `SameSite=None; Secure` and HTTPS.
-- Update Google OAuth callback to the backend URL.
-- `BETTER_AUTH_URL` must be the backend origin.
-
----
-
-## 5. Database model
-
-### `user` — managed by Better Auth
-
-Keep Better Auth fields. Add:
-
-- `accountType`: `"customer" | "technician"`
-- `phone`
-- `area`
-- `bio`
-- `role`: admin plugin role
-- `banned`, `banReason`, `banExpires`
-- `image`
-
-### `technicianProfiles`
-
-```ts
+```json
 {
-  userId: string;
-  verificationStatus: "pending" | "verified" | "rejected";
-  plan: "free" | "pro";
-  ratingAvg: number;
-  jobsCompleted: number;
-  repliesIn: string;
-  specialties: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  "statusHistory": [
+    { "status": "requested", "at": "2026-11-26", "by": "customer" }
+  ]
 }
 ```
 
-### `services`
+**Payment**
 
-```ts
+```json
 {
-  _id: string;
-  slug: string;
-  technicianId: string;
-  technicianName: string;
-  title: string;
-  category:
-    | "Smartphone"
-    | "Laptop & PC"
-    | "AC"
-    | "Refrigerator"
-    | "TV"
-    | "Washing Machine"
-    | "Electrical";
-  description: string;
-  location: string;
-  duration: string;
-  price: number;
-  mode: "Home Visit" | "Shop Drop-off";
-  coverImage: string | null;
-  includes: string[];
-  warranty: string;
-  availabilityNote: string;
-  approval: "pending" | "approved" | "rejected";
-  rejectionReason?: string;
-  available: boolean;
-  ratingAvg: number;
-  reviewCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-  approvedAt?: Date;
-  approvedBy?: string;
-  deletedAt?: Date | null;
+  "id": "payment-uuid",
+  "bookingId": "booking-uuid",
+  "bookingNumber": "FM-20261126-AB12",
+  "serviceTitle": "Build Your First PC",
+  "technician": "Addit Islam",
+  "amount": 97,
+  "paidAt": "2026-11-26",
+  "transactionId": "pi_123"
 }
 ```
 
-### `bookings`
+**Review**
 
-```ts
+```json
 {
-  _id: string;
-  bookingNumber: string;
-  customerId: string;
-  technicianId: string;
-  serviceId: string;
-  serviceSlug: string;
-  serviceTitle: string;
-  category: string;
-  mode: string;
-  basePrice: number;
-  finalAmount: number | null;
-  preferredDate: string;
-  phone: string;
-  address: string;
-  problem: string;
-  status:
-    | "requested"
-    | "accepted"
-    | "in-progress"
-    | "completed"
-    | "cancelled"
-    | "rejected";
-  paymentStatus: "unpaid" | "paid";
-  statusHistory: Array<{
-    status: string;
-    at: Date;
-    by: string;
-    note?: string;
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
-  acceptedAt?: Date;
-  startedAt?: Date;
-  completedAt?: Date;
-  cancelledAt?: Date;
-  rejectedAt?: Date;
-  checkoutSessionId?: string;
+  "id": "review-uuid",
+  "name": "Customer Name",
+  "rating": 5,
+  "text": "Fast, clear, and the final price matched the quote.",
+  "at": "2026-11-26"
 }
 ```
 
-### `payments`
+### Error codes
 
-```ts
-{
-  _id: string;
-  bookingId: string;
-  customerId: string;
-  technicianId: string;
-  amount: number;
-  currency: "usd";
-  provider: "stripe";
-  providerSessionId: string;
-  providerPaymentIntentId?: string;
-  transactionId: string;
-  status: "paid" | "refunded";
-  paidAt: Date;
-  invoiceNumber: string;
-  createdAt: Date;
-}
+| Status | Code | Meaning |
+|---|---|---|
+| `400` | `BAD_REQUEST` | Generic invalid request. |
+| `400` | `MALFORMED_JSON` | Request body is not valid JSON. |
+| `400` | `UPLOAD_ERROR` / `NO_FILE` | Missing or invalid multipart upload. |
+| `400` | `INVALID_SIGNATURE` / `INVALID_BODY` | Stripe webhook signature/body failure. |
+| `401` | `UNAUTHENTICATED` | Missing, invalid, or expired credentials. |
+| `403` | `FORBIDDEN` | Authenticated but not allowed (wrong role, suspended account, admin self-action). |
+| `404` | `NOT_FOUND` | Route or resource not found. |
+| `409` | `INVALID_STATE` | Invalid booking or listing state transition. |
+| `409` | `FINAL_AMOUNT_REQUIRED` | Checkout attempted before a positive final amount exists. |
+| `409` | `AMOUNT_MISMATCH` | Stripe amount/currency does not match the booking. |
+| `409` | `REVIEW_NOT_ALLOWED` / `ALREADY_REVIEWED` | Review rules violated. |
+| `413` | `FILE_TOO_LARGE` / `PAYLOAD_TOO_LARGE` | Upload or request body too large. |
+| `415` | `UNSUPPORTED_MEDIA_TYPE` | Upload is not JPG/PNG/WebP. |
+| `422` | `VALIDATION_ERROR` | Zod validation failed; `details` contains field issues. |
+| `429` | `RATE_LIMITED` | Too many requests; wait and retry. |
+| `500` | `INTERNAL_ERROR` / `WEBHOOK_FAILED` | Unexpected server error. |
+| `503` | `DATABASE_UNAVAILABLE` / `PAYMENTS_NOT_CONFIGURED` | Dependency unavailable or Stripe not configured. |
+
+### Rate limits
+
+| Scope | Limit |
+|---|---|
+| Auth endpoints | 40 requests / 15 minutes / IP |
+| Booking creation | 12 requests / minute / IP |
+| Uploads | 20 requests / minute / IP |
+
+---
+
+## 8. Authentication & Authorization
+
+### How can users register?
+
+Public sign-up is available at `/sign-up`. Users choose **customer** or **technician** and provide name, email, password, and optional profile details. The Express `databaseHooks.user.create.before` hook sanitizes `accountType` to `customer` or `technician`; public sign-up cannot create an admin.
+
+An optional photo is uploaded after the account exists via `POST /api/v1/uploads/avatar`, then saved with `authClient.updateUser({ image })`.
+
+### How can users log in?
+
+- **Email/password** at `/sign-in` through Better Auth.
+- **Google OAuth** when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are configured. The Google callback runs on Express at `/api/auth/callback/google`.
+
+After sign-in or sign-up, the browser requests a JWT from `POST /api/v1/auth/token`, and `TokenBootstrap` repeats that request on each signed-in mount.
+
+### Which authentication method is used?
+
+FixMate uses a **dual-token model**:
+
+1. **Better Auth session cookie** — primary browser session, read by Next.js server components.
+2. **JWT `fixmate_token` cookie** — issued by Express, used by API middleware and API clients. The API also accepts an explicit `Authorization: Bearer <token>` header.
+
+The API checks in this order:
+
+1. Explicit Bearer token (API clients).
+2. Current Better Auth session.
+3. `fixmate_token` JWT cookie.
+4. Better Auth session fallback for server-rendered requests.
+
+A stale JWT cookie must not override a newer Better Auth session; this prevents signing in as a customer after an admin session from still hitting customer endpoints as the admin.
+
+### How are sessions or tokens managed?
+
+- Better Auth session cookies are httpOnly and use `SameSite=None; Secure` in deployed environments; `Lax` locally.
+- The JWT is httpOnly, `SameSite=None; Secure` when deployed, and expires after `JWT_EXPIRES_IN` (default `7d`).
+- No access token is stored in `localStorage`.
+- Sign-out calls `POST /api/v1/auth/logout` to clear the JWT, then `authClient.signOut()` to clear the Better Auth session.
+- Server components read the session through `/api/auth/get-session` with the forwarded cookie and cache the result per request with React `cache`.
+
+### What user roles are available?
+
+| Role | Source | How it is assigned |
+|---|---|---|
+| **Customer** | `accountType` (default) | Public sign-up. |
+| **Technician** | `accountType === "technician"` | Public sign-up. |
+| **Admin** | Better Auth admin-plugin `role` contains `admin` | Backend `npm run auth:admin` or seed tooling. |
+
+Role resolution lives in `src/lib/roles.ts` on the frontend and `src/roles.ts` on the backend. Use `getAppRole()` instead of raw `user.role`.
+
+### Which routes are protected?
+
+**Public**
+
+- `/`
+- `/services`
+- `/services/[id]`
+- `/about`
+- `/sign-in`
+- `/sign-up`
+- `/payment/success`
+- `/payment/cancel`
+- `/how-it-works` (redirect)
+
+**Require sign-in**
+
+- `/dashboard`
+- `/dashboard/profile`
+- `/dashboard/customer/*`
+- `/dashboard/technician/*`
+- `/dashboard/admin/*`
+
+`/dashboard` redirects to `/dashboard/<role>`. Role pages call `requireRole`; the catch-all `[...section]` guard returns 404 for unknown sections after applying the matching role guard. Add a static page for every new dashboard section.
+
+### What permissions does each role have?
+
+| Capability | Customer | Technician | Admin |
+|---|:---:|:---:|:---:|
+| Browse public catalog | ✅ | ✅ | ✅ |
+| Create booking | ✅ | — | — |
+| View/cancel own bookings | ✅ | — | — |
+| Pay completed booking | ✅ | — | — |
+| Review paid booking | ✅ | — | — |
+| Create/edit/delete own listings | — | ✅ | — |
+| Accept/reject/start/complete own jobs | — | ✅ | — |
+| Set final amount | — | ✅ | — |
+| Approve/reject any listing | — | — | ✅ |
+| View all users/bookings/payments | — | — | ✅ |
+| Change roles | — | — | ✅ |
+| Suspend/restore users | — | — | ✅ |
+| Access customer/technician endpoints | ✅ | ✅ | ❌ |
+
+Backend ownership rules:
+
+- Customers can read/cancel only their own bookings.
+- Technicians can edit/delete only their own services and update only jobs assigned to them.
+- Payments are visible only to the owning customer or an admin.
+- Reviews require the owning customer, a `completed` + `paid` booking, and one review per booking.
+- Admin routes require the admin role.
+- Admins cannot change their own role or suspend their own account.
+
+### Booking state rules
+
+```text
+requested → accepted | rejected | cancelled
+accepted  → in-progress
+in-progress → completed (requires finalAmount > 0)
+completed + unpaid → paid (Stripe only)
 ```
 
-### `reviews`
+Invalid transitions return `409 INVALID_STATE`. Payment status is set only after a verified Stripe webhook or server-side Checkout Session verification.
 
-```ts
-{
-  _id: string;
-  bookingId: string;
-  serviceId: string;
-  customerId: string;
-  technicianId: string;
-  rating: number;
-  text: string;
-  visible: boolean;
-  createdAt: Date;
-}
+---
+
+## 9. Database Design
+
+### Which database is being used?
+
+**MongoDB**, accessed with the native MongoDB Node.js driver. Better Auth uses the MongoDB adapter. The default database name is `fixmate`.
+
+### What collections exist?
+
+| Collection | Purpose |
+|---|---|
+| `user` | Better Auth users: identity, role, account type, profile fields, ban state. |
+| `session` | Better Auth sessions: token, user, expiry, IP, user agent. |
+| `account` | Better Auth provider accounts and password records. |
+| `verification` | Better Auth verification tokens. |
+| `services` | Technician listings, admin approval state, pricing, availability, ratings. |
+| `bookings` | Repair requests, ownership, status history, final amount, payment state. |
+| `payments` | One payment per paid booking, Stripe IDs, invoice data. |
+| `reviews` | One review per paid booking, linked to a service and technician. |
+| `technicianProfiles` | Technician plan, rating, jobs completed, specialties. |
+| `auditLogs` | Admin action history (write-only in the current UI). |
+
+### What information does each collection store?
+
+**`user`** (Better Auth + additional fields)
+
+- `name`, `email`, `emailVerified`, `image`, timestamps.
+- `role` — Better Auth admin-plugin role; may be comma-separated.
+- `banned`, `banReason`, `banExpires`.
+- `accountType` — `customer` or `technician`.
+- `phone`, `area`, `bio`.
+
+**`services`**
+
+- `_id` (string UUID), `slug`, `technicianId`, `technicianName`.
+- `title`, `category`, `description`, `location`, `duration`, `price`, `mode`.
+- `coverImage`, `includes[]`, `warranty`, `availabilityNote`.
+- `approval` (`pending`/`approved`/`rejected`), `rejectionReason`.
+- `available`, `ratingAvg`, `reviewCount`.
+- `createdAt`, `updatedAt`, `approvedAt`, `approvedBy`, `deletedAt`.
+- Assignment 9 compatibility aliases such as `image`, `basePrice`, `approvalStatus`, `isAvailable`.
+
+**`bookings`**
+
+- `_id`, `bookingNumber`, `customerId`, `technicianId`, `serviceId`, `serviceSlug`.
+- `serviceTitle`, `serviceImage`, `category`, `mode`, `basePrice`, `finalAmount`.
+- `preferredDate`, `phone`, `address`, `problem`.
+- `status`, `paymentStatus`, `statusHistory[]`.
+- `createdAt`, `updatedAt`, `acceptedAt`, `startedAt`, `completedAt`, `cancelledAt`, `rejectedAt`.
+- `checkoutSessionId`.
+- Compatibility fields such as `customerName`, `customerPhone`, `problemDescription`, `rating`, `reviewText`.
+
+**`payments`**
+
+- `_id`, `bookingId` (unique), `customerId`, `technicianId`.
+- `amount`, `currency: "usd"`, `provider: "stripe"`.
+- `providerSessionId` (unique), `providerPaymentIntentId` (unique, sparse).
+- `transactionId`, `status` (`paid`/`refunded`), `paidAt`, `invoiceNumber`.
+- Compatibility fields such as `serviceTitle`, `stripeSessionId`, `paymentStatus`.
+
+**`reviews`**
+
+- `_id`, `bookingId` (unique), `serviceId`, `customerId`, `technicianId`.
+- `rating` (1–5), `text`, `visible`, `createdAt`.
+
+**`technicianProfiles`**
+
+- `_id`, `userId` (unique), `verificationStatus`, `plan`, `ratingAvg`, `jobsCompleted`, `repliesIn`, `specialties[]`, timestamps.
+
+**`auditLogs`**
+
+- `_id`, `action`, `actorId`, `actorEmail`, `targetType`, `targetId`, `metadata`, `createdAt`.
+
+### How are the collections related?
+
+```mermaid
+erDiagram
+    USER ||--o{ SERVICE : "technician owns"
+    USER ||--o{ BOOKING : "customer places"
+    USER ||--o{ BOOKING : "technician fulfils"
+    SERVICE ||--o{ BOOKING : "requested for"
+    BOOKING ||--|| PAYMENT : "paid by"
+    BOOKING ||--o| REVIEW : "reviewed by"
+    USER ||--o| TECHNICIAN_PROFILE : "has"
+    USER ||--o{ AUDIT_LOG : "admin acts"
 ```
 
-`bookingId` has a unique index, so a booking can be reviewed only once.
+- A user can own many services (technician) and many bookings (as customer or technician).
+- A service can have many bookings.
+- A booking has at most one payment (`payments.bookingId` unique).
+- A booking has at most one review (`reviews.bookingId` unique).
+- A technician has at most one technician profile (`technicianProfiles.userId` unique).
+- Admin actions write audit-log entries.
 
-### `auditLogs`
+> **ID note:** Better Auth collections (`user`, `session`, `account`, `verification`) use MongoDB `ObjectId` values. Domain documents (`services`, `bookings`, `payments`, `reviews`, `technicianProfiles`, `auditLogs`) use string IDs, usually `randomUUID()`. Convert strings to `ObjectId` only when querying Better Auth users.
 
-```ts
-{
-  _id: string;
-  action: string;
-  actorId: string;
-  actorEmail: string;
-  targetType: "user" | "service" | "booking" | "payment";
-  targetId: string;
-  metadata: Record<string, unknown>;
-  createdAt: Date;
-}
-```
+### What validation rules are implemented?
+
+Validation is application-level (Zod) plus MongoDB unique indexes. MongoDB itself is schemaless.
+
+| Area | Rule |
+|---|---|
+| **Service title** | 3–120 characters. |
+| **Service description** | 20–2,000 characters. |
+| **Service location** | 2–120 characters. |
+| **Service duration** | 1–60 characters. |
+| **Service price** | Positive integer ≤ 100,000. |
+| **Service mode** | `Home Visit` or `Shop Drop-off`. |
+| **Service category** | One of the supported seven categories. |
+| **Service includes** | Up to 20 strings, each 1–120 characters. |
+| **Warranty / availability note** | 1–200 characters. |
+| **Cover image** | Absolute URL ≤ 500 characters, or `null`. |
+| **Booking date** | `YYYY-MM-DD`, valid calendar date, today or future. |
+| **Booking phone** | 6–30 characters. |
+| **Booking address** | 5–300 characters. |
+| **Booking problem** | 20–2,000 characters. |
+| **Review rating** | Integer 1–5. |
+| **Review text** | 1–1,000 characters. |
+| **Role** | `customer`, `technician`, or `admin`. |
+| **Booking status** | `requested`, `accepted`, `in-progress`, `completed`, `cancelled`, `rejected`. |
+| **Payment status** | `unpaid` or `paid`. |
+| **Approval status** | `pending`, `approved`, or `rejected`. |
+| **Slug** | Lowercase, hyphen-separated, 1–120 characters. |
+| **Pagination** | `page` ≥ 1; `pageSize` 1–100. |
+| **Avatar upload** | JPG/PNG/WebP, ≤ 2 MB, single `file` field. |
+| **Service cover upload** | JPG/PNG/WebP, ≤ 5 MB, single `file` field. |
+| **Admin reasons** | Rejection/suspension reason ≤ 500 characters. |
 
 ### Indexes
 
-```ts
-services.createIndexes([
-  { key: { slug: 1 }, unique: true },
-  { key: { approval: 1, available: 1, createdAt: -1 } },
-  { key: { category: 1, price: 1 } },
-  { key: { technicianId: 1, approval: 1 } },
-  { key: { deletedAt: 1 } },
-]);
-
-bookings.createIndexes([
-  { key: { bookingNumber: 1 }, unique: true },
-  { key: { customerId: 1, status: 1, createdAt: -1 } },
-  { key: { technicianId: 1, status: 1, createdAt: -1 } },
-  { key: { status: 1, createdAt: -1 } },
-]);
-
-payments.createIndexes([
-  { key: { bookingId: 1 }, unique: true },
-  { key: { providerSessionId: 1 }, unique: true },
-  { key: { providerPaymentIntentId: 1 }, unique: true, sparse: true },
-  { key: { paidAt: -1 } },
-  { key: { customerId: 1, paidAt: -1 } },
-  { key: { technicianId: 1, paidAt: -1 } },
-]);
-
-reviews.createIndexes([
-  { key: { bookingId: 1 }, unique: true },
-  { key: { serviceId: 1, createdAt: -1 } },
-]);
-
-auditLogs.createIndexes([
-  { key: { createdAt: -1 } },
-  { key: { actorId: 1, createdAt: -1 } },
-  { key: { targetType: 1, targetId: 1, createdAt: -1 } },
-]);
-```
-
----
-
-## 6. Complete endpoint catalog
-
-`P0` = first usable version. `P1` = next. `P2` = later.
-
-### Auth and account
-
-Better Auth provides these. Do not hand-roll them.
-
-| P | Method | Path | Access | Purpose |
-|---|---|---|---|---|
-| P0 | POST | `/api/auth/sign-up/email` | public | Email/password sign-up with `accountType` |
-| P0 | POST | `/api/auth/sign-in/email` | public | Email/password sign-in |
-| P0 | POST | `/api/auth/sign-out` | user | End session |
-| P0 | GET | `/api/auth/get-session` | user | Current session/user |
-| P0 | POST | `/api/auth/update-user` | user | Name, phone, area, bio, image |
-| P1 | POST | `/api/auth/sign-in/social` | public | Google sign-in |
-| P1 | GET | `/api/auth/callback/google` | public | Google callback |
-| P2 | POST | `/api/auth/request-password-reset` | public | Forgot password |
-| P2 | POST | `/api/auth/reset-password` | public | Reset password |
-| P2 | POST | `/api/auth/change-password` | user | Change password |
-| P2 | GET | `/api/auth/list-sessions` | user | List sessions |
-| P2 | POST | `/api/auth/revoke-session` | user | Revoke a session |
-| P2 | POST | `/api/auth/delete-user` | user | Delete account |
-
-### Public catalog
-
-| P | Method | Path | Access | Purpose |
-|---|---|---|---|---|
-| P0 | GET | `/api/v1/health` | public | Liveness + Mongo ping |
-| P0 | GET | `/api/v1/meta` | public | Categories, modes, page size, flags |
-| P0 | GET | `/api/v1/services` | public | Search/filter/sort/paginate |
-| P0 | GET | `/api/v1/services/:slug` | public | Service detail |
-| P0 | GET | `/api/v1/services/:slug/reviews` | public | Paginated reviews + rating distribution |
-| P1 | GET | `/api/v1/home` | public | Homepage aggregates |
-| P1 | GET | `/api/v1/technicians/:id` | public | Public technician profile |
-
-### Current user / uploads
-
-| P | Method | Path | Access | Purpose |
-|---|---|---|---|---|
-| P0 | GET | `/api/v1/me` | user | Current user + role + stats |
-| P0 | PATCH | `/api/v1/me` | user | Update profile |
-| P0 | POST | `/api/v1/uploads/avatar` | user | Avatar upload |
-| P1 | POST | `/api/v1/uploads/service-cover` | technician | Listing cover upload |
-
-### Customer
-
-| P | Method | Path | Access | Purpose |
-|---|---|---|---|---|
-| P0 | GET | `/api/v1/customer/overview` | customer | Stats, active job, recent, spend |
-| P0 | POST | `/api/v1/bookings` | customer | Create repair request |
-| P0 | GET | `/api/v1/bookings` | customer | Own bookings |
-| P0 | GET | `/api/v1/bookings/:id` | owner/admin | Booking detail + timeline |
-| P0 | POST | `/api/v1/bookings/:id/cancel` | owner customer | Cancel while `requested` |
-| P0 | POST | `/api/v1/bookings/:id/checkout` | owner customer | Stripe Checkout |
-| P0 | GET | `/api/v1/customer/payments` | customer | Own payments |
-| P0 | GET | `/api/v1/payments/:id` | owner/admin | Payment detail |
-| P1 | GET | `/api/v1/payments/:id/invoice` | owner/admin | Invoice |
-| P1 | POST | `/api/v1/bookings/:id/review` | owner customer | Review paid booking |
-| P2 | GET | `/api/v1/me/reviews` | customer | Own reviews |
-
-### Technician
-
-| P | Method | Path | Access | Purpose |
-|---|---|---|---|---|
-| P0 | GET | `/api/v1/technician/overview` | technician | Overview stats |
-| P0 | GET | `/api/v1/technician/services` | technician | Own listings |
-| P0 | POST | `/api/v1/technician/services` | technician | Create pending listing |
-| P0 | GET | `/api/v1/technician/services/:id` | owner | Listing detail |
-| P0 | PATCH | `/api/v1/technician/services/:id` | owner | Edit; reset approval |
-| P0 | DELETE | `/api/v1/technician/services/:id` | owner | Soft delete |
-| P0 | PATCH | `/api/v1/technician/services/:id/availability` | owner | Pause/resume |
-| P0 | GET | `/api/v1/technician/requests` | technician | Assigned bookings |
-| P0 | GET | `/api/v1/technician/requests/:id` | assigned technician | Request detail |
-| P0 | POST | `/api/v1/technician/requests/:id/accept` | assigned technician | `requested → accepted` |
-| P0 | POST | `/api/v1/technician/requests/:id/reject` | assigned technician | `requested → rejected` |
-| P0 | POST | `/api/v1/technician/requests/:id/start` | assigned technician | `accepted → in-progress` |
-| P0 | POST | `/api/v1/technician/requests/:id/complete` | assigned technician | Complete + final amount |
-| P1 | GET | `/api/v1/technician/earnings` | technician | Monthly earnings |
-| P2 | PATCH | `/api/v1/technician/profile` | technician | Extra profile fields |
-
-### Admin
-
-| P | Method | Path | Access | Purpose |
-|---|---|---|---|---|
-| P0 | GET | `/api/v1/admin/overview` | admin | Stats/charts |
-| P0 | GET | `/api/v1/admin/users` | admin | Users list |
-| P0 | GET | `/api/v1/admin/users/:id` | admin | User detail |
-| P0 | PATCH | `/api/v1/admin/users/:id/role` | admin | Change role |
-| P0 | POST | `/api/v1/admin/users/:id/suspend` | admin | Ban user |
-| P0 | POST | `/api/v1/admin/users/:id/restore` | admin | Unban user |
-| P1 | POST | `/api/v1/admin/users/:id/verify-technician` | admin | Verify technician |
-| P2 | PATCH | `/api/v1/admin/technicians/:id/plan` | admin | Free/Pro |
-| P2 | DELETE | `/api/v1/admin/users/:id` | admin | Soft delete |
-| P0 | GET | `/api/v1/admin/services` | admin | All listings |
-| P0 | GET | `/api/v1/admin/services/:id` | admin | Listing detail |
-| P0 | POST | `/api/v1/admin/services/:id/approve` | admin | Approve |
-| P0 | POST | `/api/v1/admin/services/:id/reject` | admin | Reject with reason |
-| P1 | PATCH | `/api/v1/admin/services/:id/availability` | admin | Pause/resume |
-| P2 | DELETE | `/api/v1/admin/services/:id` | admin | Soft delete |
-| P0 | GET | `/api/v1/admin/bookings` | admin | All bookings |
-| P0 | GET | `/api/v1/admin/bookings/:id` | admin | Booking detail |
-| P2 | PATCH | `/api/v1/admin/bookings/:id/status` | admin | Manual override |
-| P0 | GET | `/api/v1/admin/payments` | admin | All payments |
-| P0 | GET | `/api/v1/admin/payments/:id` | admin | Payment detail |
-| P1 | GET | `/api/v1/admin/exports/:dataset` | admin | CSV export |
-| P2 | GET | `/api/v1/admin/audit-logs` | admin | Admin action history |
-
-### Payments / webhooks
-
-| P | Method | Path | Access | Purpose |
-|---|---|---|---|---|
-| P0 | POST | `/api/v1/webhooks/stripe` | Stripe signature | Verify and record payment |
-| P2 | POST | `/api/v1/payments/:id/refund` | admin | Refund |
-
-### Notifications — optional
-
-| P | Method | Path | Access | Purpose |
-|---|---|---|---|---|
-| P2 | GET | `/api/v1/notifications` | user | List |
-| P2 | PATCH | `/api/v1/notifications/:id/read` | owner | Mark read |
-| P2 | PATCH | `/api/v1/notifications/read-all` | user | Mark all read |
-
----
-
-## 7. Frontend integration checklist
-
-| File/component | Change |
+| Collection | Indexes |
 |---|---|
-| `src/lib/auth-client.ts` | Point to Express base URL; fix additional-field types |
-| `src/lib/authz.ts` | Fetch session from Express with forwarded cookie |
-| `src/app/api/auth/[...all]/route.ts` | Delete or proxy to Express |
-| `src/app/api/avatar/*` | Move to Express or proxy |
-| `src/app/services/page.tsx` | Query Express instead of `SERVICES` |
-| `src/app/services/[id]/page.tsx` | Query Express; add booking form |
-| `src/app/page.tsx` + home sections | Use DB-backed data |
-| `src/components/customer/customer-bookings.tsx` | Call cancel API |
-| `src/components/customer/customer-payments.tsx` | Use API data |
-| `src/components/technician/add-service-form.tsx` | POST listing + upload cover |
-| `src/components/technician/technician-services.tsx` | Availability/delete/edit APIs |
-| `src/components/technician/technician-requests.tsx` | Transition APIs |
-| `src/components/admin/admin-users.tsx` | Role/suspend/restore APIs |
-| `src/components/admin/admin-service-approval.tsx` | Approve/reject APIs |
-| `src/components/admin/admin-transactions.tsx` | API data |
-| `src/components/dashboard/dashboard-shell.tsx` | Real counts from server, not static imports |
-| `src/components/dashboard/profile-form.tsx` | Use Express auth update or `PATCH /me` |
-| `src/app/dashboard/**/page.tsx` | Fetch real data; keep page guards |
-| `src/lib/*-data.ts` | Keep as seed sources, then stop importing from pages |
+| `services` | unique `slug`; `(approval, available, createdAt)`; `(category, price)`; `(technicianId, approval)`; `deletedAt`. |
+| `bookings` | unique `bookingNumber`; `(customerId, status, createdAt)`; `(technicianId, status, createdAt)`; `(customerId, serviceId, status)`; `(status, createdAt)`. |
+| `payments` | unique `bookingId`; unique `providerSessionId`; unique sparse `providerPaymentIntentId`; `paidAt`; `(customerId, paidAt)`; `(technicianId, paidAt)`. |
+| `reviews` | unique `bookingId`; `(serviceId, createdAt)`; `(serviceId, visible, createdAt)`. |
+| `technicianProfiles` | unique `userId`. |
+| `auditLogs` | `createdAt`; `(actorId, createdAt)`; `(targetType, targetId, createdAt)`. |
 
-### Suggested client mutation pattern
+### Data integrity rules
 
-```ts
-async function cancelBooking(id: string) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/bookings/${id}/cancel`,
-    {
-      method: "POST",
-      credentials: "include",
-    },
-  );
-
-  if (!response.ok) {
-    const body = await response.json();
-    throw new Error(body.error?.message ?? "Could not cancel booking.");
-  }
-
-  router.refresh();
-}
-```
-
-Keep the existing `initialBookings` / `initialServices` prop pattern so server components can provide the first render.
-
-### Suggested server-side fetch helper
-
-```ts
-import { headers } from "next/headers";
-
-export async function apiFetch<T>(path: string): Promise<T> {
-  const cookie = (await headers()).get("cookie") ?? "";
-
-  const response = await fetch(`${process.env.API_URL}${path}`, {
-    headers: { cookie },
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-```
+- Public catalog queries require `approval: "approved"`, `available: true`, and `deletedAt: null`.
+- Listing edits reset approved/rejected listings to `pending`.
+- Booking transitions use atomic `findOneAndUpdate` filters so ownership and status rules cannot be bypassed.
+- Completing a job requires a positive `finalAmount`.
+- Payments are idempotent: one payment per booking and unique Stripe session/intent IDs.
+- Reviews are unique per booking and require `completed` + `paid`.
+- Rating aggregation updates `services.ratingAvg` and `services.reviewCount` from visible reviews.
+- Admin actions write `auditLogs`; the read endpoint/UI is not implemented yet.
 
 ---
 
-## 8. Acceptance scenario
+## 10. Screenshots / Demo
 
-The fullstack app is done when this works end to end:
+The screenshots below were captured from the live deployment on **26 November 2026**.
 
-1. Customer signs up.
-2. Technician signs up.
-3. Technician creates a service, saved as `pending`.
-4. Admin approves it, and it appears on `/services`.
-5. Customer opens the service and submits a booking request.
-6. Technician sees the request, accepts, starts, and completes it with a final amount.
-7. Customer sees `completed` + `unpaid` and pays through Stripe Checkout.
-8. Stripe webhook marks the booking paid and creates exactly one payment.
-9. Customer sees payment history and leaves a review.
-10. Technician sees earnings.
-11. Admin sees the booking, payment, and updated stats.
-12. Refresh every page; all state is still there.
-13. Try every action as the wrong role; all return `401`/`403`.
-14. Try another user's booking ID; it returns `404`/`403`.
-15. Replay the Stripe webhook; no duplicate payment is created.
+| Home | Services catalog |
+|---|---|
+| ![FixMate home page](docs/screenshots/home.png) | ![FixMate services catalog](docs/screenshots/services.png) |
+
+| Service detail | Sign in |
+|---|---|
+| ![FixMate service detail page](docs/screenshots/service-detail.png) | ![FixMate sign-in page](docs/screenshots/sign-in.png) |
+
+Authenticated dashboard screenshots are not included because they require a signed-in account. Start the app locally with the seeded demo accounts to inspect the customer, technician, and admin workspaces.
+
+### Important pages
+
+| Page | What to look for |
+|---|---|
+| `/` | Hero, category strip, latest services, how-it-works, trust band, popular categories, testimonials, CTA. |
+| `/services` | URL-driven search, category/mode filters, sorting, pagination, shared service cards. |
+| `/services/[slug]` | Cover image, price, technician profile, approval badge, reviews, booking dialog for customers. |
+| `/sign-in`, `/sign-up` | Email/password auth, optional Google button, customer/technician account type. |
+| `/dashboard` | Redirects to the signed-in user's role workspace. |
+| `/dashboard/customer` | Overview, active repair, bookings, payments. |
+| `/dashboard/technician` | Overview, listings, requests, add-service flow. |
+| `/dashboard/admin` | Platform stats, approvals, users, bookings, transactions. |
+| `/dashboard/profile` | Name, phone, area, bio, avatar. |
+| `/payment/success` | Server-verified Stripe receipt state. |
+| `/payment/cancel` | Cancelled checkout state. |
+| `/about` | Product story and job pipeline. |
+
+### Live deployment link
+
+**https://assignment-09-frontend-two.vercel.app**
+
+Health check through the frontend proxy:
+
+**https://assignment-09-frontend-two.vercel.app/api/v1/health**
+
+### Is there a demo account available?
+
+**Local demo accounts** are created by `npm run seed` in the backend repository:
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@fixmate.dev` | `ADMIN_PASSWORD` from the backend `.env` (not committed) |
+| Technician | `rakib@fixmate.dev` | `FixMateDemo123!` |
+| Technician | `sadia@fixmate.dev` | `FixMateDemo123!` |
+| Technician | `nayeem@fixmate.dev` | `FixMateDemo123!` |
+| Customer | `customer@fixmate.dev` | `FixMateDemo123!` |
+| Customer | `tanvir@mail.com` | `FixMateDemo123!` |
+
+> The **public deployment is not seeded with these demo accounts**. To try the live app, create a customer or technician account at `/sign-up`. The live admin account is provisioned by the deployer; its password is intentionally not published.
+
+To demo locally:
+
+```powershell
+cd fix_mate_back_end
+npm run seed
+npm run dev
+```
+
+then start the frontend and sign in with one of the local accounts.
 
 ---
 
-## 9. Deferred decisions
+## 11. Deployment
 
-- Object storage provider: S3 vs Cloudinary vs R2.
-- Email notifications: provider and queue.
-- Shared types: duplicate DTOs first, or create a shared package later.
-- OpenAPI/Swagger generation.
-- Test runner: the repo currently has none; add Vitest + Supertest in Phase 9 if desired.
-- Analytics: database aggregations first; add a warehouse only if needed.
+### Where is the project deployed?
+
+| Part | Platform | Notes |
+|---|---|---|
+| **Frontend** | Vercel | Project `assignment-09-frontend`; live at https://assignment-09-frontend-two.vercel.app. |
+| **Backend** | Vercel | Project `assignment-09-backend`; separate serverless deployment. The public API is exposed through the frontend proxy. |
+| **Database** | MongoDB Atlas (or local MongoDB for development) | Connection configured through `MONGODB_URI`. |
+| **Payments** | Stripe | Test or live mode; webhook points at the backend. |
+| **Uploads** | ImgBB, S3/R2/MinIO, or local | Controlled by `UPLOAD_DRIVER`. |
+
+### Are the frontend and backend deployed separately?
+
+Yes. They are separate Vercel projects and separate Git repositories. The frontend's `next.config.ts` rewrites `/api/auth/*` and `/api/v1/*` to the backend origin (`API_URL`). This keeps browser auth cookies on the frontend host, which is required for server components to read the session.
+
+### Frontend production configuration
+
+Set these in the Vercel project:
+
+```env
+API_URL=https://your-backend.vercel.app
+NEXT_PUBLIC_API_URL=https://assignment-09-frontend-two.vercel.app
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+```
+
+`API_URL` is server-only and points at the backend. `NEXT_PUBLIC_API_URL` must be the **frontend origin**, not the backend origin.
+
+### Backend production configuration
+
+Set these in the backend Vercel project:
+
+```env
+MONGODB_URI=mongodb+srv://...
+MONGODB_DB=fixmate
+BETTER_AUTH_SECRET=<32+ random characters>
+BETTER_AUTH_URL=https://your-backend.vercel.app
+FRONTEND_URL=https://assignment-09-frontend-two.vercel.app
+JWT_SECRET=<separate random secret>
+JWT_EXPIRES_IN=7d
+ADMIN_EMAIL=...
+ADMIN_NAME=...
+ADMIN_PASSWORD=<strong password>
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+UPLOAD_DRIVER=imgbb
+IMGBB_API_KEY=...
+```
+
+Optional Google OAuth:
+
+```env
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+If using S3/R2/MinIO, set the `S3_*` variables and `UPLOAD_DRIVER=s3` instead of ImgBB.
+
+> **Vercel note:** The backend does not rely on `NODE_ENV` alone to detect deployment; it also checks `VERCEL=1` through `isDeployed`. Avoid forcing `NODE_ENV=production` in a way that causes npm to skip devDependencies during the Vercel build. The backend `vercel.json` sets `installCommand` to `npm install --include=dev` so TypeScript and `tsx` are available.
+
+### How can someone deploy it?
+
+1. **Create a MongoDB Atlas cluster** and copy the connection string.
+2. **Deploy the backend** to Vercel (or any Node host):
+   - Import `https://github.com/rehat2007/Assignment-09-backend`.
+   - Set the backend environment variables.
+   - Deploy.
+3. **Run the production migration and create the admin:**
+   ```powershell
+   npm run migrate:schema
+   npm run auth:admin
+   ```
+   Run these against the production database from a trusted local environment or a one-off job.
+4. **Deploy the frontend** to Vercel:
+   - Import `https://github.com/rehat2007/Assignment-09-frontend-`.
+   - Set `API_URL` to the backend URL.
+   - Set `NEXT_PUBLIC_API_URL` to the frontend URL.
+   - Deploy.
+5. **Update backend origins** if the frontend URL changed:
+   - `FRONTEND_URL` = frontend origin.
+   - `BETTER_AUTH_URL` = backend origin.
+   - Redeploy the backend.
+6. **Configure Stripe:**
+   - Add the webhook endpoint: `https://<backend-origin>/api/v1/webhooks/stripe`.
+   - Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+   - Enable the events handled by the backend: `checkout.session.completed` and `payment_intent.succeeded`.
+7. **Configure Google OAuth (optional):**
+   - Authorized redirect URI: `https://<backend-origin>/api/auth/callback/google`.
+8. **Do not run `npm run seed` on production.** Sign up real technicians/customers, create real listings, and approve them from the admin dashboard.
+9. **Smoke-test** sign-up, sign-in, booking creation, payment, review, upload, and page reload.
+
+### Deployment-specific configurations
+
+- **Next.js rewrites:** `/api/auth/*` and `/api/v1/*` proxy to `API_URL`.
+- **Backend `vercel.json`:** `installCommand: "npm install --include=dev"` so the TypeScript build works on Vercel.
+- **Serverless entrypoint:** the backend only calls `app.listen()` when `VERCEL` is not set; on Vercel it exports the Express app as the handler.
+- **Stripe webhook order:** the webhook is mounted with `express.raw({ type: "application/json" })` **before** `express.json()` so signature verification sees the raw body.
+- **Cookie settings:** deployed environments use `SameSite=None; Secure`; local development uses `Lax`.
+- **CORS/trusted origins:** the backend trusts `FRONTEND_URL`, `BETTER_AUTH_URL`, and localhost origins outside deployment.
+
+### Production checklist
+
+- [ ] `MONGODB_URI` points to the production database.
+- [ ] `BETTER_AUTH_SECRET` is 32+ characters and unique.
+- [ ] `BETTER_AUTH_URL` and `FRONTEND_URL` use the production origins.
+- [ ] `NEXT_PUBLIC_API_URL` is the frontend origin.
+- [ ] `API_URL` is the backend origin.
+- [ ] A real admin exists via `npm run auth:admin`.
+- [ ] Real technicians and customers have signed up.
+- [ ] Real services are approved by the admin.
+- [ ] Stripe webhook is configured and `STRIPE_WEBHOOK_SECRET` is set.
+- [ ] `UPLOAD_DRIVER` and its credentials are set.
+- [ ] No demo bookings, payments, reviews, or demo accounts remain.
+- [ ] `npm run migrate:schema` has been run.
+- [ ] `npm run seed` has **not** been run against production.
+
+---
+
+## 12. Future Improvements
+
+### Planned features
+
+- Add a **forgot-password / reset-password** flow.
+- Add real **privacy, terms, and support** pages (currently footer placeholders).
+- Add **audit-log read API and admin UI**.
+- Add **server-side CSV/export endpoints** for admin datasets.
+- Add a **technician verification workflow** (document upload, verification status, admin review).
+- Add **email notifications** for booking status changes and payment receipts.
+- Add **refund handling** and admin payment actions.
+- Add **real-time job updates** (polling is not required today, but a websocket/SSE channel would improve the timeline).
+- Add **multi-currency** support; the current payment currency is USD.
+- Add **saved addresses / repeat booking** for customers.
+- Add **technician availability calendars** instead of a preferred-date request.
+
+### Current limitations
+
+- **No automated frontend tests or CI.** The backend has a smoke-test script, but there is no Playwright/Vitest suite or GitHub Actions workflow.
+- **Public demo is not seeded.** The local seed accounts do not exist on the live deployment.
+- **Some profile statistics use preview data** (`src/lib/*-data.ts`) rather than live API aggregates.
+- **No audit-log read UI**; admin actions are written to `auditLogs` but not browsable.
+- **No admin export endpoint**; CSV export is client-side for already-loaded data.
+- **No persistent theme preference**; the theme toggle only affects the current visit.
+- **Google OAuth bypasses the Next.js proxy** because the callback runs on Express; it may need separate cookie/origin handling in some deployments.
+- **No upload cleanup** for orphaned images when listings or avatars are replaced.
+- **In-memory rate limiting** is per server instance; a multi-instance/serverless deployment should use a shared store such as Redis.
+- **No license file** is included (see [Section 13](#13-author--contribution)).
+- **`npm run build` requires a reachable API** because `/` is prerendered with catalog data.
+
+### Performance improvements
+
+- Replace regex catalog search with a MongoDB text/Atlas Search index.
+- Use `next/image` for service covers and avatars to get responsive image sizing and modern formats.
+- Add Suspense/streaming around dashboard sections so slow aggregates do not block the shell.
+- Cache public catalog responses at the CDN edge with tag-based invalidation (already started with `revalidate: 60` and `catalog` tags).
+- Add database read replicas or projection-specific queries for admin overview aggregates.
+- Add Redis for rate limiting and shared session/cache state in serverless deployments.
+- Lazy-load below-the-fold homepage sections and heavy dashboard charts.
+- Add pagination to admin tables that currently load large datasets.
+- Add image compression/cleanup when replacing uploads.
+
+### Technical improvements
+
+- Add an **OpenAPI specification** and generate a typed client from it.
+- Extract shared DTOs/types into a small shared package to prevent frontend/backend drift.
+- Add **Vitest** unit tests, **Supertest** API tests, and **Playwright** end-to-end tests for the critical flows.
+- Add **GitHub Actions** for lint, typecheck, build, and smoke tests.
+- Replace preview data in profile/dashboard presentation with live endpoints.
+- Add **observability**: structured logs already exist; add error tracking (Sentry), metrics, and tracing.
+- Add **idempotency keys** for non-payment mutations (booking creation, listing creation).
+- Add **accessibility audits** (keyboard navigation, focus traps, reduced motion, color contrast).
+- Add **internationalization** and locale-aware currency/date formatting.
+- Harden Google OAuth for the same-origin proxy setup.
+- Add a formal **LICENSE** and `CONTRIBUTING.md`.
+
+---
+
+## 13. Author & Contribution
+
+### Who developed this project?
+
+**Rehat** — GitHub: [@rehat2007](https://github.com/rehat2007)
+
+This is the Assignment 9 full-stack submission, with the frontend in this repository and the API in the sibling backend repository.
+
+### Where can people find your GitHub profile?
+
+- **Profile:** https://github.com/rehat2007
+- **Frontend:** https://github.com/rehat2007/Assignment-09-frontend-
+- **Backend:** https://github.com/rehat2007/Assignment-09-backend
+
+### How can other developers contribute?
+
+1. Fork the relevant repository.
+2. Create a feature branch:
+   ```powershell
+   git checkout -b feat/your-feature
+   ```
+3. Make the change and keep the frontend/backend contracts in sync.
+4. Run the checks:
+   ```powershell
+   # Frontend
+   npx next typegen
+   npx tsc --noEmit
+   npm run lint
+
+   # Backend
+   npm run typecheck
+   npm run build
+   ```
+5. Open a pull request describing the change, the affected routes, and any environment/setup requirements. Include screenshots for UI changes.
+
+There is no `CONTRIBUTING.md` yet; the steps above are the intended workflow.
+
+### How can someone report bugs or suggest features?
+
+Use GitHub Issues:
+
+- **Frontend/UI:** https://github.com/rehat2007/Assignment-09-frontend-/issues
+- **API/database/payments:** https://github.com/rehat2007/Assignment-09-backend/issues
+
+Include the page or endpoint, steps to reproduce, expected vs. actual behavior, and relevant environment details (local vs. deployed). Do not include secrets, tokens, or personal data in issue reports.
+
+### What license does the project use?
+
+**No license file is currently included.** The repository is therefore unlicensed by default; add a `LICENSE` file (for example, MIT or Apache-2.0) before redistributing or accepting external contributions.
+
+---
+
+## Quick Reference
+
+| Need | Command / Link |
+|---|---|
+| Run frontend | `npm run dev` |
+| Run backend | `cd fix_mate_back_end && npm run dev` |
+| Frontend typecheck | `npx next typegen && npx tsc --noEmit` |
+| Frontend lint | `npm run lint` |
+| Backend typecheck | `cd fix_mate_back_end && npm run typecheck` |
+| Create admin | `cd fix_mate_back_end && npm run auth:admin` |
+| Local demo data | `cd fix_mate_back_end && npm run seed` |
+| Stripe webhook | `stripe listen --forward-to localhost:4000/api/v1/webhooks/stripe` |
+| Live app | https://assignment-09-frontend-two.vercel.app |
+| API health | https://assignment-09-frontend-two.vercel.app/api/v1/health |
+
+For repository-specific guidance when working with coding agents, see [`AGENTS.md`](AGENTS.md).
