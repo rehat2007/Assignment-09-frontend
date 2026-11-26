@@ -331,8 +331,9 @@ flowchart LR
 2. **Client components** call `${NEXT_PUBLIC_API_URL}/api/v1/...` directly with `credentials: "include"`. They handle their own JSON and error states.
 3. **Browser auth** uses Better Auth from `src/lib/auth-client.ts` with `credentials: "include"`.
 4. **Next.js rewrites** in `next.config.ts` proxy `/api/auth/*` and `/api/v1/*` to `API_URL`. In production, `NEXT_PUBLIC_API_URL` is the **frontend origin**, so auth cookies live on the frontend host and server components can read them.
+5. **Google OAuth** uses the backend `AUTH_PUBLIC_URL` as its callback origin. In deployments that is the frontend origin, so Google redirects to `<frontend>/api/auth/callback/google`, the Next rewrite proxies it to Express, and the session cookie is set on the frontend host.
 
-> **Critical deployment detail:** Do not point `NEXT_PUBLIC_API_URL` at the backend origin in production. Doing so makes sign-in appear to succeed while the dashboard redirects back to `/sign-in`, because the session cookie is stored on the wrong host.
+> **Critical deployment detail:** Do not point `NEXT_PUBLIC_API_URL` at the backend origin in production. Doing so makes sign-in appear to succeed while the dashboard redirects back to `/sign-in`, because the session cookie is stored on the wrong host. Set backend `AUTH_PUBLIC_URL` to the frontend origin for the same reason.
 
 ### How does the application handle data?
 
@@ -587,8 +588,9 @@ GOOGLE_CLIENT_SECRET=
 | `MONGODB_DB` | **Yes** | Database name; usually `fixmate`. |
 | `MONGODB_DNS_SERVERS` | Optional | Custom DNS resolver for `mongodb+srv://` on networks that block SRV lookups (e.g. `1.1.1.1`). |
 | `BETTER_AUTH_SECRET` | **Yes** | Signing secret, **at least 32 characters**; startup fails otherwise. |
-| `BETTER_AUTH_URL` | **Yes** | Backend origin used for cookies, OAuth callbacks, and local upload URLs. |
+| `BETTER_AUTH_URL` | **Yes** | Backend origin used for API/upload URLs and CORS. |
 | `FRONTEND_URL` | **Yes** | Exact frontend origin allowed by CORS and Better Auth `trustedOrigins`. |
+| `AUTH_PUBLIC_URL` | Optional | Public origin for Better Auth/OAuth callbacks. Leave blank to use `FRONTEND_URL` when deployed and `BETTER_AUTH_URL` locally. In production it should be the frontend origin so the callback goes through the Next rewrite. |
 | `JWT_SECRET` | Recommended | Separate JWT signing secret; falls back to `BETTER_AUTH_SECRET`. |
 | `JWT_EXPIRES_IN` | Optional | JWT lifetime; defaults to `7d`. |
 | `ADMIN_EMAIL` | **Yes** | Email for the admin account created by `npm run auth:admin`. |
@@ -631,7 +633,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 - **Keep backend secrets server-side.** Only `NEXT_PUBLIC_API_URL` and the optional public Google client ID belong in browser-visible variables.
 - **Use a strong, unique `BETTER_AUTH_SECRET`** (32+ characters) and a separate `JWT_SECRET`.
 - **Never commit `.env` files.** The repository ignores `.env*`; only `.env.example` belongs in the backend repository.
-- **Use production origins exactly.** `BETTER_AUTH_URL` must be the backend origin; `FRONTEND_URL` must be the frontend origin; CORS and Better Auth trusted origins depend on both.
+- **Use production origins exactly.** `BETTER_AUTH_URL` must be the backend origin; `FRONTEND_URL` must be the frontend origin; in deployments `AUTH_PUBLIC_URL` must be the frontend origin so OAuth callbacks use the Next rewrite. CORS and Better Auth trusted origins depend on them.
 - **Cookies are httpOnly and secure in deployed environments** (`SameSite=None` when deployed, `Lax` locally).
 - **Stripe webhooks require the raw request body** and a valid signature. The server verifies the signature and the amount before recording a payment.
 - **Never trust client amounts, roles, or status values.** The backend recomputes roles, loads booking amounts, and enforces status transitions.
@@ -1014,7 +1016,7 @@ An optional photo is uploaded after the account exists via `POST /api/v1/uploads
 ### How can users log in?
 
 - **Email/password** at `/sign-in` through Better Auth.
-- **Google OAuth** when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are configured. The Google callback runs on Express at `/api/auth/callback/google`.
+- **Google OAuth** when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are configured. The callback is served at `AUTH_PUBLIC_URL/api/auth/callback/google`: locally the backend, and in deployments the frontend origin proxied to Express.
 
 After sign-in or sign-up, the browser requests a JWT from `POST /api/v1/auth/token`, and `TokenBootstrap` repeats that request on each signed-in mount.
 
@@ -1372,6 +1374,8 @@ MONGODB_DB=fixmate
 BETTER_AUTH_SECRET=<32+ random characters>
 BETTER_AUTH_URL=https://your-backend.vercel.app
 FRONTEND_URL=https://assignment-09-frontend-two.vercel.app
+# Frontend origin: Google redirects here, then the Next rewrite proxies to Express.
+AUTH_PUBLIC_URL=https://assignment-09-frontend-two.vercel.app
 JWT_SECRET=<separate random secret>
 JWT_EXPIRES_IN=7d
 ADMIN_EMAIL=...
@@ -1415,13 +1419,14 @@ If using S3/R2/MinIO, set the `S3_*` variables and `UPLOAD_DRIVER=s3` instead of
 5. **Update backend origins** if the frontend URL changed:
    - `FRONTEND_URL` = frontend origin.
    - `BETTER_AUTH_URL` = backend origin.
+   - `AUTH_PUBLIC_URL` = frontend origin (so OAuth callbacks use the Next rewrite).
    - Redeploy the backend.
 6. **Configure Stripe:**
    - Add the webhook endpoint: `https://<backend-origin>/api/v1/webhooks/stripe`.
    - Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
    - Enable the events handled by the backend: `checkout.session.completed` and `payment_intent.succeeded`.
 7. **Configure Google OAuth (optional):**
-   - Authorized redirect URI: `https://<backend-origin>/api/auth/callback/google`.
+   - Authorized redirect URI: `https://<frontend-origin>/api/auth/callback/google` when `AUTH_PUBLIC_URL` is the frontend origin (recommended for the proxy setup). Keep a localhost backend callback for local development if needed.
 8. **Do not run `npm run seed` on production.** Sign up real technicians/customers, create real listings, and approve them from the admin dashboard.
 9. **Smoke-test** sign-up, sign-in, booking creation, payment, review, upload, and page reload.
 
@@ -1432,13 +1437,14 @@ If using S3/R2/MinIO, set the `S3_*` variables and `UPLOAD_DRIVER=s3` instead of
 - **Serverless entrypoint:** the backend only calls `app.listen()` when `VERCEL` is not set; on Vercel it exports the Express app as the handler.
 - **Stripe webhook order:** the webhook is mounted with `express.raw({ type: "application/json" })` **before** `express.json()` so signature verification sees the raw body.
 - **Cookie settings:** deployed environments use `SameSite=None; Secure`; local development uses `Lax`.
-- **CORS/trusted origins:** the backend trusts `FRONTEND_URL`, `BETTER_AUTH_URL`, and localhost origins outside deployment.
+- **CORS/trusted origins:** the backend trusts `FRONTEND_URL`, `BETTER_AUTH_URL`, `AUTH_PUBLIC_URL`, and localhost origins outside deployment.
 
 ### Production checklist
 
 - [ ] `MONGODB_URI` points to the production database.
 - [ ] `BETTER_AUTH_SECRET` is 32+ characters and unique.
 - [ ] `BETTER_AUTH_URL` and `FRONTEND_URL` use the production origins.
+- [ ] `AUTH_PUBLIC_URL` is the frontend origin so Google OAuth callbacks go through the Next rewrite.
 - [ ] `NEXT_PUBLIC_API_URL` is the frontend origin.
 - [ ] `API_URL` is the backend origin.
 - [ ] A real admin exists via `npm run auth:admin`.
@@ -1476,7 +1482,7 @@ If using S3/R2/MinIO, set the `S3_*` variables and `UPLOAD_DRIVER=s3` instead of
 - **No audit-log read UI**; admin actions are written to `auditLogs` but not browsable.
 - **No admin export endpoint**; CSV export is client-side for already-loaded data.
 - **No persistent theme preference**; the theme toggle only affects the current visit.
-- **Google OAuth bypasses the Next.js proxy** because the callback runs on Express; it may need separate cookie/origin handling in some deployments.
+- **Google sign-up always creates a customer**; the Technician option applies only to email sign-up.
 - **No upload cleanup** for orphaned images when listings or avatars are replaced.
 - **In-memory rate limiting** is per server instance; a multi-instance/serverless deployment should use a shared store such as Redis.
 - **No license file** is included (see [Section 13](#13-author--contribution)).
@@ -1505,7 +1511,6 @@ If using S3/R2/MinIO, set the `S3_*` variables and `UPLOAD_DRIVER=s3` instead of
 - Add **idempotency keys** for non-payment mutations (booking creation, listing creation).
 - Add **accessibility audits** (keyboard navigation, focus traps, reduced motion, color contrast).
 - Add **internationalization** and locale-aware currency/date formatting.
-- Harden Google OAuth for the same-origin proxy setup.
 - Add a formal **LICENSE** and `CONTRIBUTING.md`.
 
 ---

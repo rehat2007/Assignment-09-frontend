@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
     // keep the session cookie on the backend host only.
     return [
       {
+        // Also carries the Google OAuth callback, so Better Auth sets the
+        // session cookie on the frontend host instead of the backend host.
         source: "/api/auth/:path*",
         destination: `${API_URL}/api/auth/:path*`,
       },
