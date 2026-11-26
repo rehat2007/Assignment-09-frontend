@@ -28,6 +28,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { authClient } from "@/lib/auth-client";
 import type { AppRole } from "@/lib/roles";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
 type NavItem = { label: string; href: string; icon: LucideIcon; count?: number };
 
 const CUSTOMER_NAV: NavItem[] = [
@@ -176,6 +178,13 @@ export function DashboardShell({
   }
 
   async function handleSignOut() {
+    // Clear the JWT cookie too; otherwise Express keeps authenticating this
+    // browser after the Better Auth session is gone.
+    await fetch(`${API_URL}/api/v1/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => undefined);
+
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
